@@ -12,6 +12,8 @@
 
 **Prerequisite:** Plan 1（`plans/2026-10-16-plan-1-foundation.md`）全部完成並通過驗證。本計畫假設其產物原樣存在（`schema.rs`、`rules/`、`tests/common/mod.rs` 的 `HEAD`／`doc`／`tags`／`codes`／`tag_codes`）。
 
+> **勾選說明**：已完成的步驟已勾選，依據為程式與測試（`cargo test -p machine-model` 全綠）。8 個「確認測試失敗」（紅燈）步驟未勾選：紅燈的執行結果沒有留在 git 歷史中，無法回溯驗證。
+
 ## Global Constraints
 
 - 本專案根目錄：`/mnt/c/Users/wydct/orca/projects/MachineModel`；指令都在此執行。
@@ -85,7 +87,7 @@ machine-model/tests/
   - `naming::function_of(rest: &str) -> &str`：`"ext_time"` → `"ext"`
   - `naming::default_label(function: &str) -> Option<&'static str>`
 
-- [ ] **Step 1: 放寬 `too_many_lines` 並加診斷建構子**
+- [x] **Step 1: 放寬 `too_many_lines` 並加診斷建構子**
 
 `Cargo.toml` 的 `[workspace.lints.clippy]` 區塊加一行：
 
@@ -136,7 +138,7 @@ too_many_lines = "allow"
     }
 ```
 
-- [ ] **Step 2: 寫失敗的測試（`naming.rs` 只先寫測試，並在 `lib.rs` 加 `pub mod naming;`）**
+- [x] **Step 2: 寫失敗的測試（`naming.rs` 只先寫測試，並在 `lib.rs` 加 `pub mod naming;`）**
 
 `machine-model/src/lib.rs`：在 `pub mod family;` 之後加 `pub mod naming;`。
 
@@ -227,7 +229,7 @@ mod tests {
 Run: `cargo test -p machine-model naming`
 Expected: FAIL（編譯錯誤：`Prefix` 等未定義）。
 
-- [ ] **Step 4: 寫實作（放在 `naming.rs` 的 `#[cfg(test)]` 之前）**
+- [x] **Step 4: 寫實作（放在 `naming.rs` 的 `#[cfg(test)]` 之前）**
 
 ```rust
 use crate::schema::Role;
@@ -374,12 +376,12 @@ pub fn default_label(function: &str) -> Option<&'static str> {
 }
 ```
 
-- [ ] **Step 5: 執行測試確認通過**
+- [x] **Step 5: 執行測試確認通過**
 
 Run: `cargo test -p machine-model`
 Expected: PASS（含 Plan 1 全部測試）。
 
-- [ ] **Step 6: Checkpoint**
+- [x] **Step 6: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨（先 `cargo fmt --all`，`TABLE` 的長行會被 rustfmt 重排）。
@@ -403,7 +405,7 @@ Expected: 乾淨（先 `cargo fmt --all`，`TABLE` 的長行會被 rustfmt 重�
   - `unit_type::PinRef<'a> { FieldIn(&'a FieldPin), FieldOut(&'a FieldPin), Ctrl(Prefix, &'a CtrlPin), Part(&'a str) }`；`UnitType::lookup(&self, name: &str) -> Option<PinRef<'_>>`（依序找 `field.in`、`field.out`、`ctrl`、`parts`）
   - `unit_type::parse_unit_type(label: &str, text: &str) -> Result<UnitType, Vec<Diagnostic>>`：`label` 是檔名之類的來源名稱，只用在診斷位置
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 `machine-model/src/unit_type.rs` 先只放（並在 `lib.rs` 加 `pub mod unit_type;`，置於 `pub mod types;` 之後）：
 
@@ -576,7 +578,7 @@ parts: {}
 Run: `cargo test -p machine-model unit_type`
 Expected: FAIL（編譯錯誤：`parse_unit_type` 等未定義）。
 
-- [ ] **Step 3: 寫實作（放在 `unit_type.rs` 的 `#[cfg(test)]` 之前）**
+- [x] **Step 3: 寫實作（放在 `unit_type.rs` 的 `#[cfg(test)]` 之前）**
 
 ```rust
 use serde::Deserialize;
@@ -847,12 +849,12 @@ fn check_structure(t: &UnitType) -> Vec<Diagnostic> {
 
 注意：`sc3_prefix_rules` 中 `par_x: { type: int16 }` 預期三個 `SC3`（缺 min、max、default），順序固定。
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `cargo test -p machine-model unit_type`
 Expected: PASS（8 個測試）。`sc2_structure_errors` 若某筆回的不是單一 `SC2`（例如 `title: ''` 同時觸發別的規則），回報實際結果；`with("  man_a: {}\n  man_a: {}\n")` 的重複鍵錯誤來自 `StrictMap`，訊息是「重複的鍵」，不含 `unknown field`，但仍應是 `SC2`。
 
-- [ ] **Step 5: Checkpoint**
+- [x] **Step 5: Checkpoint**
 
 Run: `cargo test --workspace && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 全過。測試裡 `format!("{CYLINDER}")` 若被 clippy 指為 `useless_format`，改成 `CYLINDER.to_owned()` 即可。
@@ -874,7 +876,7 @@ Expected: 全過。測試裡 `format!("{CYLINDER}")` 若被 clippy 指為 `usele
   - `UnitCatalog::with_local(self, locals: &[(&str, &str)]) -> Built`：疊加本地類型，同 id 覆蓋並產生 `Info` `U17`
   - `type_rules::check(types: &BTreeMap<String, UnitType>) -> Vec<Diagnostic>`（`pub(crate)`）
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 `machine-model/tests/catalog.rs`：
 
@@ -1032,7 +1034,7 @@ fn local_types_are_checked_against_the_combined_catalog() {
 Run: `cargo test -p machine-model --test catalog`
 Expected: FAIL（編譯錯誤：`machine_model::catalog` 不存在）。
 
-- [ ] **Step 3: 寫 `catalog.rs`**
+- [x] **Step 3: 寫 `catalog.rs`**
 
 ```rust
 //! Unit 類型目錄（規格 §9.1）：載入多份類型檔、疊加本地類型、套用類型層規則。
@@ -1130,7 +1132,7 @@ impl UnitCatalog {
 }
 ```
 
-- [ ] **Step 4: 寫 `type_rules.rs`**
+- [x] **Step 4: 寫 `type_rules.rs`**
 
 ```rust
 //! 類型層規則：U1、U12、U15、U18、U19（U17 在 `catalog`）。輸入是整個目錄，
@@ -1329,12 +1331,12 @@ fn check_parts(types: &BTreeMap<String, UnitType>, out: &mut Vec<Diagnostic>) {
 
 在 `lib.rs` 加 `pub mod catalog;`（`pub mod address;` 之後）與 `mod type_rules;`（`pub mod types;` 之後）。
 
-- [ ] **Step 5: 執行測試**
+- [x] **Step 5: 執行測試**
 
 Run: `cargo test -p machine-model`
 Expected: PASS。若 `u12_par_range_and_default` 的 `par("0", "70000", "5", "int16")` 沒有恰好一個 `U12`（min≤default≤max 成立，只有 max 超出型別），代表邊界檢查有誤，修實作而不是測試。`u15` 的第一個案例：`ext`×2、`exr`×1（與 `ext` 差一字）、`stop`×1（與 `ext` 距離 > 1）→ 恰一個警告。
 
-- [ ] **Step 6: Checkpoint**
+- [x] **Step 6: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨。
@@ -1354,7 +1356,7 @@ Expected: 乾淨。
   - `standard::standard_sources() -> &'static [(&'static str, &'static str)]`：`(來源名稱如 "unit-types/cylinder_double.yaml", 內容)`
   - `UnitCatalog::standard() -> UnitCatalog`（`standard.rs` 內的 `impl UnitCatalog`）；內嵌類型有誤時 panic（測試保證不會發生）
 
-- [ ] **Step 1: 建立三個標準類型檔**
+- [x] **Step 1: 建立三個標準類型檔**
 
 `standards/unit-types/cylinder_double.yaml`（規格 §4 範例）：
 
@@ -1418,7 +1420,7 @@ parts:
   stn: station_load
 ```
 
-- [ ] **Step 2: 寫失敗的測試與空的釘選檔**
+- [x] **Step 2: 寫失敗的測試與空的釘選檔**
 
 `standards/unit-types.pins`（先只放註解）：
 
@@ -1554,7 +1556,7 @@ fn spec_example_types_are_present() {
 Run: `cargo test -p machine-model --test standard_pins`
 Expected: FAIL（編譯錯誤：`machine_model::hash` 不存在）。
 
-- [ ] **Step 4: 寫實作**
+- [x] **Step 4: 寫實作**
 
 `machine-model/src/hash.rs`：
 
@@ -1625,17 +1627,17 @@ impl UnitCatalog {
 - 標準 Unit 類型放 `standards/unit-types/<id>.yaml`，並加進 `machine-model/src/standard.rs` 的 `STANDARD` 與 `standards/unit-types.pins`。改類型檔內容必須調高 `version`（`tests/standard_pins.rs` 把關）。
 ```
 
-- [ ] **Step 5: 產生釘選檔**
+- [x] **Step 5: 產生釘選檔**
 
 Run: `cargo test -p machine-model --test standard_pins print_pins -- --ignored --nocapture`
 把輸出中形如 `cylinder_double 1 <16 位十六進位>` 的三行（不含 cargo 的其他輸出）附加到 `standards/unit-types.pins` 註解之後。
 
-- [ ] **Step 6: 執行測試確認通過**
+- [x] **Step 6: 執行測試確認通過**
 
 Run: `cargo test -p machine-model`
 Expected: PASS（含 `every_standard_type_is_pinned_and_unchanged`）。若 `standard_catalog_builds_with_no_errors_or_warnings` 出現 `U15` 警告，代表標準類型檔的功能名被判定拼錯——回報，不要靠刪警告過關。
 
-- [ ] **Step 7: Checkpoint**
+- [x] **Step 7: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨。
@@ -1657,7 +1659,7 @@ Expected: 乾淨。
 
 演算法要求：**不得遞迴**（用 Kahn 與 BFS），避免環或深樹造成堆疊溢位或無窮迴圈。
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 在 `machine-model/tests/common/mod.rs` 檔尾追加：
 
@@ -1818,7 +1820,7 @@ fn diagnostics_are_traditional_chinese_with_location() {
 Run: `cargo test -p machine-model --test analyze_graph`
 Expected: FAIL（編譯錯誤：`machine_model::analyze` 不存在）。
 
-- [ ] **Step 3: 寫實作**
+- [x] **Step 3: 寫實作**
 
 `machine-model/src/analyze/mod.rs`：
 
@@ -2060,12 +2062,12 @@ fn reachable_from<'a>(root: &'a str, children: &BTreeMap<&'a str, Vec<&'a str>>)
 
 `lib.rs` 加 `pub mod analyze;`（`pub mod address;` 之後）。
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `cargo test -p machine-model`
 Expected: PASS。`u5_...` 最後一個 `null` 案例預期恰為 `["U8"]`（`leaf1` 沒人綁）；`u7` 的案例 `b: leaf1` 會讓 `leaf2` 變成孤兒，所以實際回 `["U7", "U8"]`——測試用 `contains`，不要改成相等。若任何案例卡住或超時，代表混進了遞迴／無窮迴圈，必須修實作。
 
-- [ ] **Step 5: Checkpoint**
+- [x] **Step 5: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨。
@@ -2090,7 +2092,7 @@ Expected: 乾淨。
 - **U13**：`write_candidate` 前綴（`man`、`par`）的腳綁到唯讀位址類別的 Tag，或綁到 `safety_monitor: true` 的 Tag。兩個條件各報一次。
 - **U14（Warning）**：Tag 明確的 `role` 與該腳的有效 role（腳的 `role`，否則前綴推測）不同。
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 在 `machine-model/tests/common/mod.rs` 檔尾追加：
 
@@ -2336,7 +2338,7 @@ fn u14_is_a_warning_not_an_error() {
 Run: `cargo test -p machine-model --test analyze_pins`
 Expected: FAIL（`check_pins` 目前是空殼，多數測試拿到空診斷）。
 
-- [ ] **Step 3: 寫實作（取代 `analyze/pins.rs`）**
+- [x] **Step 3: 寫實作（取代 `analyze/pins.rs`）**
 
 ```rust
 //! 接腳綁定規則：U4、U6、U10、U11、U13、U14。
@@ -2571,7 +2573,7 @@ fn class_of(tag: &Tag, plcs: &BTreeMap<&str, &Plc>) -> Option<&'static ClassProf
 }
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `cargo test -p machine-model`
 Expected: PASS。逐一核對有可能與預期不同之處並回報（不要改規則去遷就測試）：
@@ -2580,7 +2582,7 @@ Expected: PASS。逐一核對有可能與預期不同之處並回報（不要改
 - `u11_...` 的 `mixed`：`at_ok` 綁 `L1_in`，而 `L1_in` 已被 `i1` 使用。
 - `u13_...` 的 `par_t: plc1.XP`（X32 int16）：X 是位元類別，位址規則 R19 在這裡不跑，所以只會有 `U10`（型別 int16 對 par_t 的 int16 其實相同，不會有 U10）與 `U13`；測試只斷言包含 `U13`。
 
-- [ ] **Step 5: Checkpoint**
+- [x] **Step 5: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨。
@@ -2617,10 +2619,10 @@ Expected: 乾淨。
 - 同一 Tag 被多個接腳綁定時（U11 允許共用感測輸入、共用參數、共用同動操作），全部記錄在 `bindings` 向量中。
 - `ResolvedTag` 保留 `spare`、`polarity`、`ext`，供下游（PlcDataService 與匯出）原樣轉發而不遺失資訊；`ResolvedPlc` 則合理裁剪掉靜態設定欄位（`title`、`diff_scope`、`sources`）。
 
-- [ ] **Step 1: 建立 fixture**
+- [x] **Step 1: 建立 fixture**
 
 > [!NOTE]
-> `tests/fixtures/valid_full.yaml`（Plan 1 建立）只供載入安全規則（R 系列）測試使用，因其簡化綁定不保證過 U 規則（例如 machine.bind.stn 宣告 station_load 卻接了 cylinder_double）；實例層規則與解析測試請使用此處建立的 `valid_units.yaml`。
+> `tests/fixtures/structural_full.yaml`（Plan 1 建立）只供載入安全規則（R 系列）測試使用，因其簡化綁定不保證過 U 規則（例如 machine.bind.stn 宣告 station_load 卻接了 cylinder_double）；實例層規則與解析測試請使用此處建立的 `valid_units.yaml`。
 
 `machine-model/tests/fixtures/valid_units.yaml`（使用標準類型；每個單元一行，測試會用字串替換製造變體）：
 
@@ -2650,7 +2652,7 @@ tags:
   - { id: plc1.M_Spare, address: M130, type: bool }
 ```
 
-- [ ] **Step 2: 寫失敗的測試**
+- [x] **Step 2: 寫失敗的測試**
 
 `machine-model/tests/resolve.rs`：
 
@@ -2858,7 +2860,7 @@ units:\n  - {id: machine, type: ghost, type_version: 9, bind: {x: plc1.NOPE, y: 
 Run: `cargo test -p machine-model --test resolve`
 Expected: FAIL（編譯錯誤：`machine_model::resolve` 不存在）。
 
-- [ ] **Step 4: 寫實作 `resolve.rs`**
+- [x] **Step 4: 寫實作 `resolve.rs`**
 
 ```rust
 //! 推導與解析結果（規格 §6、§9.2）：把 `machine.yaml` 與類型目錄變成下游直接使用的資料。
@@ -3257,12 +3259,12 @@ fn resolve_pins(
 
 `lib.rs` 加 `pub mod resolve;`（`pub mod rules;` 之前）。
 
-- [ ] **Step 5: 執行測試確認通過**
+- [x] **Step 5: 執行測試確認通過**
 
 Run: `cargo test -p machine-model`
 Expected: PASS。失敗時以實作邏輯為準回報，不要為了通過而扭曲規則。`pins` 的順序是確定的：依 `units[]` 宣告順序（`machine`、`st1`、`cyl1`），單元內依接腳名字母序；`path_of` 由根往下排列（`machine/st1/cyl1`）。
 
-- [ ] **Step 6: Checkpoint**
+- [x] **Step 6: Checkpoint**
 
 Run: `cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
 Expected: 乾淨。（`resolve_tag` 參數 `path_of: &dyn Fn(&str) -> String` 若 clippy 抱怨，改成泛型 `impl Fn(&str) -> String`。）
@@ -3281,7 +3283,7 @@ Expected: 乾淨。（`resolve_tag` 參數 `path_of: &dyn Fn(&str) -> String` �
   - `pub struct Checked { pub resolved: ResolvedModel, pub warnings: Vec<Diagnostic> }`
   - `pub fn load_checked(text: &str, catalog: &UnitCatalog) -> Result<Checked, Vec<Diagnostic>>`：先 `load`（載入安全規則；有錯就只回這些，不再往下跑 U 規則）；再 `analyze::check`；有 `Error` 回 `Err(全部診斷)`；否則 `Ok`，`warnings` 是 `Warning`／`Info` 診斷；最後 `resolve`
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 `machine-model/tests/e2e.rs`：
 
@@ -3389,7 +3391,7 @@ fn unreferenced_tags_are_never_write_candidates() {
 Run: `cargo test -p machine-model --test e2e`
 Expected: FAIL（編譯錯誤：`load_checked` 未定義）。
 
-- [ ] **Step 3: 寫實作（加在 `lib.rs` 檔尾）**
+- [x] **Step 3: 寫實作（加在 `lib.rs` 檔尾）**
 
 ```rust
 /// [`load_checked`] 的成功結果。
@@ -3419,12 +3421,12 @@ pub fn load_checked(
 }
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `cargo test --workspace`
 Expected: PASS。`a_catalog_without_the_needed_type_is_u2` 的白名單只是防止連鎖雜訊以外的規則混入；若實際出現其他編號（例如 `U5`），把它加進白名單並說明原因即可，但必須保留 `U2` 存在的斷言。
 
-- [ ] **Step 5: 最終驗證（回報給控制端）**
+- [x] **Step 5: 最終驗證（回報給控制端）**
 
 Run:
 
@@ -3455,7 +3457,7 @@ Expected：測試全過；`grep` 輸出 `OK: …`（`schema.rs` 測試裡拿 `wr
   9. U2／U5 連鎖防護：`analyze/graph.rs` 在子層單元之類型不在目錄內（已報 U2）時，跳過父層 part 的 U5 類型比對，避免連鎖雜訊。
   10. `ResolvedTag` 完整性：收錄 `spare`、`polarity`、`ext`，確保下游（PlcDataService 與匯出）原樣轉發不失真；`ResolvedPlc` 則合理裁剪掉靜態設定欄位（`title`、`diff_scope`、`sources`）。
   11. U1 職責分工：`units[].id` 唯一由載入階段之 R26 負責，單元類型內名稱唯一性由目錄建構時的 U1 負責。
-  12. Fixture 區隔：`valid_full.yaml` 僅供載入安全規則測試；`valid_units.yaml` 才是符合 U 規則的標準實例。
+  12. Fixture 區隔：`structural_full.yaml` 僅供載入安全規則測試；`valid_units.yaml` 才是符合 U 規則的標準實例。
 - **尚未涵蓋**：`Serialize` 衍生（`dump` 指令用，屬 CLI 計畫）、`schema` feature、命令列、PlcDataService 整合、HMI 覆蓋率報告的輸出格式。
 - **型別一致**：`UnitCatalog::get`／`standard`／`from_sources`／`with_local`（Task 3、4）在 Task 5～8 照用；`PinRef`（Task 2）在 Task 5、6、7 照用；`analyze::{check, check_graph, check_pins}`（Task 5）在 Task 6、8 照用；`ResolvedModel` 欄位（Task 7）在 Task 8 照用。
 - **已知手動核對點**：Task 5 測試字串替換（`replace`）容易抄錯，已註明可改寫；Task 7 的 pins 排序期望已註明依實作順序修正。

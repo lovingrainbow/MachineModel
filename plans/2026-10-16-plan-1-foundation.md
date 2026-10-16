@@ -60,7 +60,7 @@ MachineModel/
     tests/values.rs               （Task 5）
     tests/addresses.rs            （Task 6）
     tests/fixture.rs              （Task 7）
-    tests/fixtures/valid_full.yaml（Task 7）
+    tests/fixtures/structural_full.yaml（Task 7）
     tests/dependency_rules.rs     （Task 7）
 ```
 
@@ -1892,7 +1892,7 @@ Expected: 乾淨。
 ### Task 7: 完整範例、依賴規則與收尾
 
 **Files:**
-- Create: `machine-model/tests/fixtures/valid_full.yaml`, `machine-model/tests/fixture.rs`, `machine-model/tests/dependency_rules.rs`
+- Create: `machine-model/tests/fixtures/structural_full.yaml`, `machine-model/tests/fixture.rs`, `machine-model/tests/dependency_rules.rs`
 
 **Interfaces:**
 - Consumes: `machine_model::{parse, validate, load}`。
@@ -1900,7 +1900,7 @@ Expected: 乾淨。
 
 - [x] **Step 1: 寫 fixture 與測試**
 
-`machine-model/tests/fixtures/valid_full.yaml`（涵蓋全部區塊，所有規則都通過）：
+`machine-model/tests/fixtures/structural_full.yaml`（涵蓋全部區塊，所有規則都通過）：
 
 ```yaml
 schema_version: 2
@@ -1944,7 +1944,7 @@ mod common;
 
 use machine_model::{load, parse, validate};
 
-const FULL: &str = include_str!("fixtures/valid_full.yaml");
+const FULL: &str = include_str!("fixtures/structural_full.yaml");
 
 #[test]
 fn full_fixture_loads_with_no_diagnostics() {
@@ -2026,7 +2026,7 @@ fn library_dependency_tree_has_no_runtime_or_network_stacks() {
 - [x] **Step 2: 執行測試**
 
 Run: `cargo test -p machine-model`
-Expected: PASS。`fixture.rs` 的 `mod common;` 若造成 `unused` 警告，刪掉那行（本檔沒用到共用工具）。若 `valid_full.yaml` 有診斷，**不要**改規則；用 `cargo test -p machine-model --test fixture -- --nocapture` 看診斷，回報是 fixture 寫錯（例如 `Y10` 位址對該家族無效）還是規則有誤，並以家族表為準修 fixture。
+Expected: PASS。`fixture.rs` 的 `mod common;` 若造成 `unused` 警告，刪掉那行（本檔沒用到共用工具）。若 `structural_full.yaml` 有診斷，**不要**改規則；用 `cargo test -p machine-model --test fixture -- --nocapture` 看診斷，回報是 fixture 寫錯（例如 `Y10` 位址對該家族無效）還是規則有誤，並以家族表為準修 fixture。
 
 - [x] **Step 3: 全專案驗證**
 

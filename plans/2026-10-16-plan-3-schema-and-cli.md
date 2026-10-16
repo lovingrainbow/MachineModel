@@ -11,6 +11,10 @@
 
 ## 實作現況與修訂紀錄
 
+- **全部步驟已勾選。** 補充說明：
+  - `structural_full.yaml`（原名 `valid_full.yaml`）只用於結構測試，不代表目錄層級有效；目錄層級的有效範例是 `valid_units.yaml`。`machinemodel check` 對前者仍回報 U5、U6，這是預期內的。
+  - 全 workspace 驗證（`--all-features` 測試、clippy `-D warnings`、fmt）已通過，`tools/model-debugger` 現已可建置。
+
 - **核對日期**：2026-10-16（依 repo 現況）。
 - **檔案已存在、`cargo test --workspace --all-features` 全綠**：Task 1（feature 與依賴測試）、Task 2（schema 產生器與釘選，含舊屬性，須依本次修訂重產）、Task 3（`validate_unit_type`）、Task 4（crate 骨架）、Task 5（`check`）。下列 Task 的「Create」指目標狀態，實作時先核對現有檔案，不要重建。
 - **骨架（會假成功）**：Task 6 的 `dump`、`check-types` 與 Task 7 的 `write-report` 目前直接回 0；Task 6 Step 1（`Serialize`）尚未做。
@@ -61,12 +65,12 @@
 - Modify: `machine-model/src/resolve.rs`：`ResolvedPin` 移除 `kind`、`level`、`reset`；刪除接腳層 `role` 覆寫分支（`pin_role` 只由前綴決定）。**Tag 層級的 `role`（規格 §3.2、§6.1）保留，不動。**
 - Modify: `standards/unit-types/machine_ctrl.yaml`：移除 `error_estop` 的 `level`、`reset`；`version` 由 1 調為 2。
 - Modify: `standards/unit-types.pins`：依 `tests/standard_pins.rs` 的 `print_pins` 重新產生（`machine_ctrl 2 <雜湊>`）。
-- Modify: 受影響的 fixture 與測試的 `type_version`／期望版本：`machine-model/tests/fixtures/valid_units.yaml`、`valid_full.yaml`（如有）、`machine-model/tests/resolve.rs:232`（`("machine_ctrl", 1)` → 2）、`machinemodel/tests/cli_check.rs`。
+- Modify: 受影響的 fixture 與測試的 `type_version`／期望版本：`machine-model/tests/fixtures/valid_units.yaml`、`structural_full.yaml`（如有）、`machine-model/tests/resolve.rs:232`（`("machine_ctrl", 1)` → 2）、`machinemodel/tests/cli_check.rs`。
 
 **Steps:**
-- [ ] **Step 1: 移除上列欄位與型別，`cargo build -p machine-model` 確認無殘留引用**
-- [ ] **Step 2: 改 `machine_ctrl.yaml` 並調高 `version`，重新產生 pins（AGENTS 規定內容改變必須調高 version）**
-- [ ] **Step 3: 同步 fixture 與測試的 `type_version`，`cargo test --workspace --all-features` 全綠**
+- [x] **Step 1: 移除上列欄位與型別，`cargo build -p machine-model` 確認無殘留引用**
+- [x] **Step 2: 改 `machine_ctrl.yaml` 並調高 `version`，重新產生 pins（AGENTS 規定內容改變必須調高 version）**
+- [x] **Step 3: 同步 fixture 與測試的 `type_version`，`cargo test --workspace --all-features` 全綠**
 
 **注意（副作用）**：`error_estop` 原本的 `emergency` 等級會隨之消失。若之後需要區分緊急停止，須另議（不在本次範圍）。
 
@@ -87,10 +91,10 @@
   - `fn no_features_banned()`：以 `cargo tree -p machine-model --no-default-features` 執行，禁止：`tokio`, `axum`, `reqwest`, `hyper`, `clap`, `clap_builder`, `clap_derive`, `jsonschema`, `serde_json`。
   - `fn schema_feature_banned()`：以 `cargo tree -p machine-model --features schema` 執行，禁止：`tokio`, `axum`, `reqwest`, `hyper`, `clap`, `clap_builder`, `clap_derive`；`jsonschema`、`serde_json` 必須出現（正向斷言 feature 確實啟用）。
 
-- [ ] **Step 1: 修改 `machine-model/Cargo.toml` 宣告可選依賴與 feature**
-- [ ] **Step 2: 擴充 `tests/dependency_rules.rs` 涵蓋無 feature 與含 feature 的雙重驗證**
-- [ ] **Step 3: 執行 `cargo test -p machine-model --test dependency_rules` 確認通過**
-- [ ] **Step 4: Checkpoint: `cargo clippy --workspace --all-targets -- -D warnings`**
+- [x] **Step 1: 修改 `machine-model/Cargo.toml` 宣告可選依賴與 feature**
+- [x] **Step 2: 擴充 `tests/dependency_rules.rs` 涵蓋無 feature 與含 feature 的雙重驗證**
+- [x] **Step 3: 執行 `cargo test -p machine-model --test dependency_rules` 確認通過**
+- [x] **Step 4: Checkpoint: `cargo clippy --workspace --all-targets -- -D warnings`**
 
 ---
 
@@ -126,11 +130,11 @@
   - 比對 `include_str!("../../standards/schema/unit-type.schema.json")` 與 `generate_unit_type_schema()`。
   - 附帶 `#[ignore] fn print_schema()` 供維護者直接更新該檔案。
 
-- [ ] **Step 1: 實作 `schema_gen.rs`，透過 `Prefix::ALL` 遍歷前綴屬性，產生符合 JSON Schema Draft 2020-12 的 JSON 字串**
-- [ ] **Step 2: 產生 `standards/schema/unit-type.schema.json` 並寫入磁碟（先有檔案，Step 3 的比對才有意義）**
-- [ ] **Step 3: 撰寫 `tests/schema_pins.rs`，比對磁碟檔案與產生器輸出**
-- [ ] **Step 4: 執行 `cargo test -p machine-model --test schema_pins --features schema` 確認通過**
-- [ ] **Step 5: Checkpoint: `cargo fmt --all --check` 與 clippy 檢查**
+- [x] **Step 1: 實作 `schema_gen.rs`，透過 `Prefix::ALL` 遍歷前綴屬性，產生符合 JSON Schema Draft 2020-12 的 JSON 字串**
+- [x] **Step 2: 產生 `standards/schema/unit-type.schema.json` 並寫入磁碟（先有檔案，Step 3 的比對才有意義）**
+- [x] **Step 3: 撰寫 `tests/schema_pins.rs`，比對磁碟檔案與產生器輸出**
+- [x] **Step 4: 執行 `cargo test -p machine-model --test schema_pins --features schema` 確認通過**
+- [x] **Step 5: Checkpoint: `cargo fmt --all --check` 與 clippy 檢查**
 
 ---
 
@@ -155,10 +159,10 @@
   - 遍歷 `standards/unit-types/*.yaml` 全部標準類型，驗證每個皆通過且無錯誤（目前為 `cylinder_double.yaml`、`station_load.yaml`、`machine_ctrl.yaml`，未來新增時自動涵蓋）。
   - **一致性測試**：拿 `unit_type.rs` 內建測試裡的各類非法案例（SC2 未知欄位、SC3 前綴違規、`error_` 缺少 `message`、`par_` 缺少 `type`/`min`/`max`/`default`、陣列越界如 `int16[501]`/`int16[0]`/字串陣列等），驗證 `parse_unit_type`（程式碼版）與 `validate_unit_type_schema`（Schema 版，不經 parse）兩者**皆判定為失敗且皆帶有 SC2 或 SC3**。Schema 已完整覆蓋陣列 1～500 與 `string:N`，無殘差豁免。
 
-- [ ] **Step 1: 在 `unit_type.rs` 撰寫 `validate_unit_type` 函式與錯誤訊息轉譯邏輯**
-- [ ] **Step 2: 撰寫 `tests/schema_validate.rs` 驗證標準類型與負向錯誤案例**
-- [ ] **Step 3: 執行 `cargo test -p machine-model --features schema --test schema_validate` 確認通過**
-- [ ] **Step 4: 執行 `cargo test --workspace --features schema` 確保現有測試全數相容**
+- [x] **Step 1: 在 `unit_type.rs` 撰寫 `validate_unit_type` 函式與錯誤訊息轉譯邏輯**
+- [x] **Step 2: 撰寫 `tests/schema_validate.rs` 驗證標準類型與負向錯誤案例**
+- [x] **Step 3: 執行 `cargo test -p machine-model --features schema --test schema_validate` 確認通過**
+- [x] **Step 4: 執行 `cargo test --workspace --features schema` 確保現有測試全數相容**
 
 ---
 
@@ -186,10 +190,10 @@
 - `main.rs`:
   - 使用 `clap` 定義頂層 CLI 與四個子命令骨架：`check`、`dump`、`check-types`、`write-report`。
 
-- [ ] **Step 1: 設定 workspace 與建立 `machinemodel` crate**
-- [ ] **Step 2: 撰寫 `machinemodel/tests/cli_exit_codes.rs` 驗證未知參數、找不到檔案時回傳退出碼 2**
-- [ ] **Step 3: 實作 `main.rs` 的錯誤處理與 exit code 返回邏輯**
-- [ ] **Step 4: 執行 `cargo test -p machinemodel` 確認通過**
+- [x] **Step 1: 設定 workspace 與建立 `machinemodel` crate**
+- [x] **Step 2: 撰寫 `machinemodel/tests/cli_exit_codes.rs` 驗證未知參數、找不到檔案時回傳退出碼 2**
+- [x] **Step 3: 實作 `main.rs` 的錯誤處理與 exit code 返回邏輯**
+- [x] **Step 4: 執行 `cargo test -p machinemodel` 確認通過**
 
 ---
 
@@ -214,9 +218,9 @@
   - 若指定 `--report` 或 `--coverage`，向 stdout 輸出格式化表格或報告。
   - 無 Error 時退出 0。
 
-- [ ] **Step 1: 撰寫 `cli_check.rs` 測試合法案例（回 0）、錯誤案例（回 1）、帶報告輸出案例**
-- [ ] **Step 2: 實作 `check.rs` 處理引數與整合 `load_checked`**
-- [ ] **Step 3: 執行 `cargo test -p machinemodel --test cli_check` 確認通過**
+- [x] **Step 1: 撰寫 `cli_check.rs` 測試合法案例（回 0）、錯誤案例（回 1）、帶報告輸出案例**
+- [x] **Step 2: 實作 `check.rs` 處理引數與整合 `load_checked`**
+- [x] **Step 3: 執行 `cargo test -p machinemodel --test cli_check` 確認通過**
 
 ---
 
@@ -250,10 +254,10 @@
   - **有 `<DIR>` 參數**：讀取 `<DIR>/*.yaml`（讀檔失敗→退出 2），以 `standard_catalog.with_local(locals)` 疊加（本地同 id 覆蓋標準），再對 **全部合併後** 的類型執行 U1（名稱唯一）、U12（`par_` 範圍）、U15（拼寫提示）、U18（`parts` 存在且無環）、U19（`error_` bool）等驗證（U2 需 `units[]` 實例，不在 `check-types` 範圍；U17 須在 `<DIR>` 原始檔上檢查重複 id，因合併後 id 必然唯一；與標準同 id 只產生覆蓋提示），以及對每個類型跑 `validate_unit_type`（SC2/SC3 雙重驗證）。不支援「只驗 `<DIR>` 不帶標準庫」，避免 U5/U18 跨庫引用無法檢查。
   - 輸出每個類型的驗證結果；有錯誤退出 1，全部有效退出 0。
 
-- [ ] **Step 1: 按 Interfaces 傳遞閉包在 `resolve.rs`、`schema.rs`、`strict.rs`、`naming.rs`、`family.rs`、`unit_type.rs` 加上 `Serialize` 衍生，隨即執行 `cargo build -p machine-model --features schema` 確認**
-- [ ] **Step 2: 撰寫 `cli_dump_and_types.rs` 測試 `dump`（YAML 與 JSON 格式）及 `check-types`**
-- [ ] **Step 3: 實作 `dump.rs` 與 `check_types.rs`**
-- [ ] **Step 4: 執行 `cargo test -p machinemodel --test cli_dump_and_types` 確認通過**
+- [x] **Step 1: 按 Interfaces 傳遞閉包在 `resolve.rs`、`schema.rs`、`strict.rs`、`naming.rs`、`family.rs`、`unit_type.rs` 加上 `Serialize` 衍生，隨即執行 `cargo build -p machine-model --features schema` 確認**
+- [x] **Step 2: 撰寫 `cli_dump_and_types.rs` 測試 `dump`（YAML 與 JSON 格式）及 `check-types`**
+- [x] **Step 3: 實作 `dump.rs` 與 `check_types.rs`**
+- [x] **Step 4: 執行 `cargo test -p machinemodel --test cli_dump_and_types` 確認通過**
 
 ---
 
@@ -280,10 +284,10 @@
   - 若違反任何護欄，印出清晰繁中違規錯誤並退出 1。
   - 若無違規，向 stdout 輸出完整審查報表並退出 0。
 
-- [ ] **Step 1: 撰寫 `cli_write_report.rs` 測試護欄 1～3 的拒絕機制以及合法覆寫的報告輸出**
-- [ ] **Step 2: 實作 `write_report.rs` 讀取 TOML 與執行護欄驗證邏輯**
-- [ ] **Step 3: 執行 `cargo test -p machinemodel --test cli_write_report` 確認通過**
-- [ ] **Step 4: 執行全 workspace 整合測試與檢查**
+- [x] **Step 1: 撰寫 `cli_write_report.rs` 測試護欄 1～3 的拒絕機制以及合法覆寫的報告輸出**
+- [x] **Step 2: 實作 `write_report.rs` 讀取 TOML 與執行護欄驗證邏輯**
+- [x] **Step 3: 執行 `cargo test -p machinemodel --test cli_write_report` 確認通過**
+- [x] **Step 4: 執行全 workspace 整合測試與檢查**
 
 ---
 

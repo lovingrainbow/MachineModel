@@ -1,7 +1,7 @@
 # Unit／Tag 模型規格（v0.3，待使用者審閱）
 
 日期：2026-10-16
-狀態：v0.3 草案（已依審查修訂：移除接腳 `kind`、`level`、`reset`、`role`；字串陣列明確禁止；機台本地類型自動讀取 `types/`）。相對 v0.2 的變更：模型層不再有 `writable`（改輸出 `write_candidate`，最終可寫由 PlcDataService 決定）；`units[]` 加 `type_version`；新增 §9 執行期輸出與下游接口；新增命令列工具範圍；規格適用於獨立的 MachineModel 專案。
+狀態：v0.3 定稿（使用者已確認；已依審查修訂：移除接腳 `kind`、`level`、`reset`、`role`；字串陣列明確禁止；機台本地類型自動讀取 `types/`）。相對 v0.2 的變更：模型層不再有 `writable`（改輸出 `write_candidate`，最終可寫由 PlcDataService 決定）；`units[]` 加 `type_version`；新增 §9 執行期輸出與下游接口；新增命令列工具範圍；規格適用於獨立的 MachineModel 專案。
 性質：獨立規格，自成一體。P1／P2 規格（AIAutomation 專案）暫停，其中被取代的章節只作歷史參考。
 互動示範：`scratch/unit-type-viewer.html`（AIAutomation 專案內，已發布為私人 Artifact），行為以本文為準，示範頁可能落後。
 
