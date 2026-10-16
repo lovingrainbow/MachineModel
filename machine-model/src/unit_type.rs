@@ -120,12 +120,19 @@ pub fn parse_unit_type(label: &str, text: &str) -> Result<UnitType, Vec<Diagnost
 /// （不讀磁碟；磁碟檔僅供快照比對）。
 #[cfg(feature = "schema")]
 pub fn validate_unit_type(text: &str) -> Vec<Diagnostic> {
-    use crate::strip_bom;
-
-    let text = strip_bom(text);
+    let text = crate::strip_bom(text);
     if let Err(diags) = parse_unit_type("類型檔", text) {
         return diags;
     }
+    validate_unit_type_schema(text)
+}
+
+/// 只做 YAML→JSON→Schema 驗證，不經 [`parse_unit_type`]（規格 §8.2 SC2／SC3）。
+///
+/// 供一致性測試使用，讓 Schema 能獨立判定；正式入口請用 [`validate_unit_type`]。
+#[cfg(feature = "schema")]
+pub fn validate_unit_type_schema(text: &str) -> Vec<Diagnostic> {
+    let text = crate::strip_bom(text);
     let instance: serde_json::Value = match serde_yaml_ng::from_str(text) {
         Ok(v) => v,
         Err(e) => {

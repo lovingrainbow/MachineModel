@@ -1,7 +1,7 @@
 #![cfg(feature = "schema")]
 #![allow(clippy::assert_is_empty)]
 
-use machine_model::unit_type::{parse_unit_type, validate_unit_type};
+use machine_model::unit_type::{parse_unit_type, validate_unit_type, validate_unit_type_schema};
 
 fn is_sc(code: &str) -> bool {
     code == "SC2" || code == "SC3"
@@ -13,7 +13,8 @@ fn both_fail(text: &str) {
         !code_err.is_empty() && code_err.iter().all(|d| is_sc(d.code)),
         "程式碼版應報 SC2/SC3：{text} -> {code_err:?}"
     );
-    let schema_err = validate_unit_type(text);
+    // 只跑 Schema（不經 parse），讓一致性測試能獨立判定 Schema
+    let schema_err = validate_unit_type_schema(text);
     assert!(
         !schema_err.is_empty() && schema_err.iter().all(|d| is_sc(d.code)),
         "Schema 版應報 SC2/SC3：{text} -> {schema_err:?}"
@@ -25,7 +26,7 @@ fn both_pass(text: &str) {
         parse_unit_type("t.yaml", text).is_ok(),
         "程式碼版應通過：{text}"
     );
-    let errs = validate_unit_type(text);
+    let errs = validate_unit_type_schema(text);
     assert!(errs.is_empty(), "Schema 版應通過：{text} -> {errs:?}");
 }
 
@@ -60,7 +61,6 @@ fn consistency_sc2_structure_errors() {
         "id: t\nversion: 1\ntitle: T\nbogus: 1\n".to_owned(),
         with("  man_a: { writable: true }\n"),
         with("  man_a: { write_permission: P01 }\n"),
-        with("  man_a: {}\n  man_a: {}\n"),
         "id: t\nversion: 1\ntitle: [\n".to_owned(),
         "id: 'bad id'\nversion: 1\ntitle: T\n".to_owned(),
         "id: t\nversion: 0\ntitle: T\n".to_owned(),
@@ -68,6 +68,20 @@ fn consistency_sc2_structure_errors() {
     ] {
         both_fail(&text);
     }
+}
+
+/// 重複鍵只能由 `StrictMap` 在解析階段擋下；YAML→JSON 會靜默保留最後一個，
+/// 所以 Schema-only 路徑判定不了，這個案例只驗程式碼版與完整入口。
+#[test]
+fn duplicate_keys_are_rejected_by_parser_not_schema_only() {
+    let text = with("  man_a: {}\n  man_a: {}\n");
+    let code_err = parse_unit_type("t.yaml", &text).unwrap_err();
+    assert!(code_err.iter().all(|d| d.code == "SC2"), "{code_err:?}");
+    let full = validate_unit_type(&text);
+    assert!(
+        !full.is_empty() && full.iter().all(|d| d.code == "SC2"),
+        "{full:?}"
+    );
 }
 
 #[test]
