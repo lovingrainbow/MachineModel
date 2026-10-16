@@ -49,3 +49,10 @@
 
 - `machine-model/tests/fixtures/structural_full.yaml`（原 `valid_full.yaml`）只做結構測試，不代表目錄層級有效。
 - 目錄層級的有效範例是 `machine-model/tests/fixtures/valid_units.yaml`。
+
+## 9. role 層級的規格與計畫落差（已處理）
+
+- **現象**：計畫 2 寫的 role 優先序有三層（Tag 明確值 ＞ 接腳 role ＞ 前綴推測），但 v0.3 已移除接腳 role（規格 §4.1，提交 `9d92594`）。計畫文字沒有同步更新，讓人誤以為規格缺少 role 優先序。
+- **已處理**：規格 §6.1 與 U14 改寫為「Tag 上明確寫的 `role`」，並註明接腳 role 不參與優先序；計畫 2 檔頭加註記，列出受影響的行。
+- **影響判斷**：計畫的 role 測試（Task 6 的 U14、Task 7 的 role 測試）只測 Tag 明確值與前綴推測，不受影響；紅燈步驟無法重現的原因與此無關（見第 2 項）。
+- **待確認**：這些紅燈步驟的重現尚未逐一實際執行。
