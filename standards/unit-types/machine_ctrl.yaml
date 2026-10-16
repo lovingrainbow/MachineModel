@@ -1,5 +1,5 @@
 id: machine_ctrl
-version: 1
+version: 2
 title: 機台根（最小框架）
 ctrl:
   man_start:   { label: 啟動 }
@@ -8,6 +8,6 @@ ctrl:
   man_mode:    { type: int16 }
   at_mode:     { type: int16 }
   at_running:  {}
-  error_estop: { message: 緊急停止, level: emergency, reset: manual }
+  error_estop: { message: 緊急停止 }
 parts:
   stn: station_load

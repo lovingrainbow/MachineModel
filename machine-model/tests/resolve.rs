@@ -4,7 +4,6 @@ use machine_model::catalog::UnitCatalog;
 use machine_model::naming::Prefix;
 use machine_model::resolve::{ResolvedModel, RoleSource, resolve};
 use machine_model::schema::Role;
-use machine_model::unit_type::{Kind, Level, Reset};
 
 const FIXTURE: &str = include_str!("fixtures/valid_units.yaml");
 
@@ -141,7 +140,6 @@ fn pin_lists_carry_defaults_and_labels() {
         .find(|p| p.unit_id == "cyl1" && p.pin == "man_ext")
         .unwrap();
     assert_eq!(op.label, "伸出");
-    assert_eq!(op.kind, Some(Kind::Momentary));
     assert_eq!(op.tag.as_deref(), Some("plc1.M_Cyl1_ManExt"));
 
     // 順序：依 units[] 的宣告順序（machine、st1、cyl1），單元內依接腳名字母序
@@ -158,13 +156,7 @@ fn pin_lists_carry_defaults_and_labels() {
         ]
     );
     let ext = r.alarms().find(|p| p.pin == "error_ext").unwrap();
-    assert_eq!(
-        (ext.level, ext.reset),
-        (Some(Level::Abnormal), Some(Reset::Manual))
-    );
     assert_eq!(ext.message.as_deref(), Some("伸出逾時"));
-    let estop = r.alarms().find(|p| p.pin == "error_estop").unwrap();
-    assert_eq!(estop.level, Some(Level::Emergency));
 
     assert_eq!(
         r.parameters().map(|p| p.pin.as_str()).collect::<Vec<_>>(),
@@ -229,7 +221,7 @@ fn fingerprint_pins_source_and_type_versions() {
         v,
         [
             ("cylinder_double", 1),
-            ("machine_ctrl", 1),
+            ("machine_ctrl", 2),
             ("station_load", 1)
         ]
     );

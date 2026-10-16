@@ -4,7 +4,7 @@ machine:
   plcs:
     - { id: plc1, family: inovance_easy }
 units:
-  - { id: machine, type: machine_ctrl, type_version: 1, bind: { stn: st1, error_estop: plc1.M_Estop, man_mode: plc1.D_ModeCmd, at_mode: plc1.D_ModeAct } }
+  - { id: machine, type: machine_ctrl, type_version: 2, bind: { stn: st1, error_estop: plc1.M_Estop, man_mode: plc1.D_ModeCmd, at_mode: plc1.D_ModeAct } }
   - { id: st1, type: station_load, type_version: 1, bind: { cyl: cyl1 } }
   - { id: cyl1, type: cylinder_double, type_version: 1, bind: { lim_ext: plc1.X_Cyl1_Ext_LS, lim_ret: plc1.X_Cyl1_Ret_LS, valve_ext: plc1.Y_Cyl1_Ext, valve_ret: plc1.Y_Cyl1_Ret, man_ext: plc1.M_Cyl1_ManExt, man_ret: plc1.M_Cyl1_ManRet, error_ext: plc1.M_Cyl1_ErrExt, error_ret: plc1.M_Cyl1_ErrRet, par_ext_time: plc1.D_Cyl1_ExtTime } }
 tags:

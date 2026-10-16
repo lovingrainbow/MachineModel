@@ -138,7 +138,7 @@ pub(super) fn check(m: &MachineModel, catalog: &UnitCatalog, out: &mut Vec<Diagn
                         ));
                     }
                 }
-                PinRef::Ctrl(prefix, p) => {
+                PinRef::Ctrl(prefix, _) => {
                     if prefix.info().write_candidate {
                         if class.is_some_and(|c| c.read_only) {
                             out.push(Diagnostic::error(
@@ -157,7 +157,7 @@ pub(super) fn check(m: &MachineModel, catalog: &UnitCatalog, out: &mut Vec<Diagn
                             ));
                         }
                     }
-                    let effective = p.role.unwrap_or(prefix.info().role);
+                    let effective = prefix.info().role;
                     if tag.role.is_some_and(|r| r != effective) {
                         out.push(Diagnostic::warning(
                             "U14",

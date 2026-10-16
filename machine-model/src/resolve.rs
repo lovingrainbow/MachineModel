@@ -14,7 +14,7 @@ use crate::schema::{
     BindRef, MachineModel, Polarity, Role, Scalar, Scan, Tag, Variable, classify_bind, split_id,
 };
 use crate::strict::Ext;
-use crate::unit_type::{CtrlPin, Kind, Level, PinRef, Reset};
+use crate::unit_type::{CtrlPin, PinRef};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResolvedModel {
@@ -113,9 +113,6 @@ pub struct ResolvedPin {
     pub label: String,
     pub ty: String,
     pub tag: Option<String>,
-    pub kind: Option<Kind>,
-    pub level: Option<Level>,
-    pub reset: Option<Reset>,
     pub message: Option<String>,
     pub unit: Option<String>,
     pub min: Option<f64>,
@@ -293,10 +290,7 @@ fn resolve_tag(
 ) -> ResolvedTag {
     let pin_role = tag_binders.iter().find_map(|b| {
         let prefix = b.prefix?;
-        Some((
-            b.ctrl.and_then(|c| c.role).unwrap_or(prefix.info().role),
-            prefix,
-        ))
+        Some((prefix.info().role, prefix))
     });
     let (role, role_source) = match (t.role, pin_role) {
         (Some(r), _) => (Some(r), RoleSource::Explicit),
@@ -376,7 +370,6 @@ fn resolve_pins(
                 },
                 _ => None,
             };
-            let is_error = prefix == Prefix::Error;
             out.push(ResolvedPin {
                 unit_id: u.id.clone(),
                 unit_path: path_of(&u.id),
@@ -390,11 +383,6 @@ fn resolve_pins(
                     .unwrap_or_else(|| function.to_owned()),
                 ty: pin.type_text(prefix).unwrap_or_default().to_owned(),
                 tag,
-                kind: pin
-                    .kind
-                    .or((prefix == Prefix::Man).then_some(Kind::Momentary)),
-                level: pin.level.or(is_error.then_some(Level::Abnormal)),
-                reset: pin.reset.or(is_error.then_some(Reset::Manual)),
                 message: pin.message.clone(),
                 unit: pin.unit.clone(),
                 min: pin.min,

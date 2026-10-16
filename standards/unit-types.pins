@@ -2,5 +2,5 @@
 # 改了類型檔內容就必須調高 version，並重新產生本檔：
 #   cargo test -p machine-model --test standard_pins print_pins -- --ignored --nocapture
 cylinder_double 1 b1c170560ca482fc
-machine_ctrl 1 36bdf7f039f0c0f1
+machine_ctrl 2 c2e24b4d1d0ffe76
 station_load 1 9ac2bd329d3ad06c

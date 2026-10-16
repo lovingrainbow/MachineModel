@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::diag::Diagnostic;
 use crate::naming::{self, Prefix};
-use crate::schema::{Role, Scalar, is_valid_name};
+use crate::schema::{Scalar, is_valid_name};
 use crate::strict::StrictMap;
 use crate::types::{DataType, ScalarType};
 
@@ -45,43 +45,17 @@ pub struct FieldPin {
     pub unit: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Kind {
-    Momentary,
-    Toggle,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Level {
-    Warning,
-    Abnormal,
-    Emergency,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Reset {
-    Auto,
-    Manual,
-}
-
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CtrlPin {
     #[serde(rename = "type")]
     pub ty: Option<String>,
     pub label: Option<String>,
-    pub kind: Option<Kind>,
-    pub role: Option<Role>,
     pub unit: Option<String>,
     pub min: Option<f64>,
     pub max: Option<f64>,
     pub default: Option<Scalar>,
     pub message: Option<String>,
-    pub level: Option<Level>,
-    pub reset: Option<Reset>,
 }
 
 impl CtrlPin {
@@ -470,6 +444,19 @@ parts: {}
             "id: t\nversion: 1\ntitle: ''\n".to_owned(),
         ] {
             assert_eq!(codes(&text), ["SC2"], "{text}");
+        }
+    }
+
+    #[test]
+    fn removed_pin_attributes_are_unknown_fields() {
+        // 規格 §4.1 修訂：接腳不再有 kind／level／reset／role（Tag 層級的 role 不在此列）
+        for attr in [
+            "man_a: { type: bool, kind: momentary }",
+            "error_a: { message: x, level: emergency }",
+            "error_a: { message: x, reset: manual }",
+            "man_a: { type: bool, role: status }",
+        ] {
+            assert_eq!(codes(&with(&format!("  {attr}\n"))), ["SC2"], "{attr}");
         }
     }
 

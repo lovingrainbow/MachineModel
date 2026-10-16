@@ -36,7 +36,7 @@ fn valid_model_exits_0() {
 fn broken_binding_exits_1() {
     let bad = write_temp(
         "machinemodel-test-bad.yaml",
-        "schema_version: 2\nmachine:\n  id: demo\n  plcs:\n    - { id: plc1, family: inovance_easy }\nunits:\n  - { id: machine, type: machine_ctrl, type_version: 1, bind: { stn: ghost } }\ntags: []\n",
+        "schema_version: 2\nmachine:\n  id: demo\n  plcs:\n    - { id: plc1, family: inovance_easy }\nunits:\n  - { id: machine, type: machine_ctrl, type_version: 2, bind: { stn: ghost } }\ntags: []\n",
     );
     let out = Command::new(binary())
         .args(["check", &bad.display().to_string()])
