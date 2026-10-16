@@ -12,7 +12,11 @@ mod write_report;
 
 /// 設計期檢查命令列工具。
 #[derive(Debug, Parser)]
-#[command(name = "machinemodel", version, about = "machine.yaml v2 設計期檢查工具")]
+#[command(
+    name = "machinemodel",
+    version,
+    about = "machine.yaml v2 設計期檢查工具"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

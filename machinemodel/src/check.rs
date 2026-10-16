@@ -75,7 +75,10 @@ fn load_catalog(dir: Option<&std::path::Path>) -> Result<UnitCatalog, i32> {
             }
         };
         let path = entry.path();
-        if path.extension().is_none_or(|e| !e.eq_ignore_ascii_case("yaml")) {
+        if path
+            .extension()
+            .is_none_or(|e| !e.eq_ignore_ascii_case("yaml"))
+        {
             continue;
         }
         match std::fs::read_to_string(&path) {
