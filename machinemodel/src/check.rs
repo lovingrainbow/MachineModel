@@ -6,10 +6,9 @@ use machine_model::catalog::UnitCatalog;
 #[derive(Debug, clap::Args)]
 pub struct Args {
     /// 機台設定檔（`machine.yaml` v2）。
+    ///
+    /// 機台本地類型自動讀取其旁邊的 `types/*.yaml`（同 id 覆蓋標準類型，不提供旗標）。
     pub machine: std::path::PathBuf,
-    /// 本地單元類型目錄（`*.yaml`，同 id 覆蓋標準類型）。
-    #[arg(long)]
-    pub local_types: Option<std::path::PathBuf>,
     /// 列印推導報告（每個 Tag 的 `role`、`write_candidate` 與理由）。
     #[arg(long)]
     pub report: bool,
@@ -19,7 +18,7 @@ pub struct Args {
 }
 
 /// 執行檢查：0 通過、1 規則錯誤、2 I/O 錯誤。
-pub fn run(args: Args) -> i32 {
+pub fn run(args: &Args) -> i32 {
     let text = match std::fs::read_to_string(&args.machine) {
         Ok(t) => t,
         Err(e) => {
@@ -27,7 +26,12 @@ pub fn run(args: Args) -> i32 {
             return 2;
         }
     };
-    let catalog = match load_catalog(args.local_types.as_deref()) {
+    let types_dir = args
+        .machine
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("types");
+    let catalog = match load_catalog(&types_dir) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -53,11 +57,12 @@ pub fn run(args: Args) -> i32 {
     }
 }
 
-/// 以內嵌標準類型為基礎，疊加本地類型目錄。I/O 失敗回 `Err(2)`。
-fn load_catalog(dir: Option<&std::path::Path>) -> Result<UnitCatalog, i32> {
-    let Some(dir) = dir else {
+/// 以內嵌標準類型為基礎，疊加 `types/` 目錄的本地類型；目錄不存在視為沒有本地類型。
+/// I/O 失敗（含 `types` 不是目錄）回 `Err(2)`。
+fn load_catalog(dir: &std::path::Path) -> Result<UnitCatalog, i32> {
+    if !dir.exists() {
         return Ok(UnitCatalog::standard());
-    };
+    }
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(e) => {
