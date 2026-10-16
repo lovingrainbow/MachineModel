@@ -38,39 +38,24 @@ fn string_n_only() -> Value {
     serde_json::json!({ "type": "string", "pattern": STRING_N })
 }
 
-fn role_enum() -> Value {
-    serde_json::json!({ "enum": [
-        "process_value", "setpoint", "command", "mode",
-        "status", "alarm", "counter", "message",
-    ] })
-}
-
 /// 每個前綴一條 schema，呼叫者以 `Prefix::ALL` 遍歷組裝。
+/// 接腳只有 `type`、`label`、`unit`（與 `par_` 的 min／max／default、`error_` 的 message）；
+/// 其餘屬性由 `additionalProperties: false` 擋下。
 fn per_prefix(prefix: Prefix) -> Value {
     let label = serde_json::json!({ "type": "string" });
-    let role = role_enum();
+    let unit = serde_json::json!({ "type": "string" });
     match prefix {
-        Prefix::Cmd | Prefix::Ena | Prefix::At | Prefix::Sts | Prefix::Count => {
+        Prefix::Cmd | Prefix::Man | Prefix::Ena | Prefix::At | Prefix::Sts | Prefix::Count => {
             serde_json::json!({
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                     "type": type_any(),
                     "label": label,
-                    "role": role,
+                    "unit": unit,
                 },
             })
         }
-        Prefix::Man => serde_json::json!({
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "type": type_any(),
-                "label": label,
-                "role": role,
-                "kind": { "enum": ["momentary", "toggle"] },
-            },
-        }),
         Prefix::Par => serde_json::json!({
             "type": "object",
             "additionalProperties": false,
@@ -80,9 +65,8 @@ fn per_prefix(prefix: Prefix) -> Value {
                 "min": { "type": "number" },
                 "max": { "type": "number" },
                 "default": { "type": "number" },
-                "unit": { "type": "string" },
+                "unit": unit,
                 "label": label,
-                "role": role,
             },
         }),
         Prefix::Error => serde_json::json!({
@@ -92,10 +76,8 @@ fn per_prefix(prefix: Prefix) -> Value {
             "properties": {
                 "type": { "enum": ["bool"] },
                 "message": { "type": "string", "minLength": 1 },
-                "level": { "enum": ["warning", "abnormal", "emergency"] },
-                "reset": { "enum": ["auto", "manual"] },
                 "label": label,
-                "role": role,
+                "unit": unit,
             },
         }),
         Prefix::Pv => serde_json::json!({
@@ -105,8 +87,7 @@ fn per_prefix(prefix: Prefix) -> Value {
             "properties": {
                 "type": type_any(),
                 "label": label,
-                "unit": { "type": "string" },
-                "role": role,
+                "unit": unit,
             },
         }),
         Prefix::Msg => serde_json::json!({
@@ -116,8 +97,7 @@ fn per_prefix(prefix: Prefix) -> Value {
             "properties": {
                 "type": string_n_only(),
                 "label": label,
-                "unit": { "type": "string" },
-                "role": role,
+                "unit": unit,
             },
         }),
     }

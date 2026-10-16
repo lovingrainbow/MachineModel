@@ -10,18 +10,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -46,6 +34,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -56,18 +47,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -92,6 +71,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -102,18 +84,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -138,6 +108,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -148,18 +121,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -184,6 +145,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -194,39 +158,17 @@
             "label": {
               "type": "string"
             },
-            "level": {
-              "enum": [
-                "warning",
-                "abnormal",
-                "emergency"
-              ]
-            },
             "message": {
               "minLength": 1,
               "type": "string"
-            },
-            "reset": {
-              "enum": [
-                "auto",
-                "manual"
-              ]
-            },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
             },
             "type": {
               "enum": [
                 "bool"
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "required": [
@@ -237,26 +179,8 @@
         "^man_": {
           "additionalProperties": false,
           "properties": {
-            "kind": {
-              "enum": [
-                "momentary",
-                "toggle"
-              ]
-            },
             "label": {
               "type": "string"
-            },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
             },
             "type": {
               "anyOf": [
@@ -282,6 +206,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -291,18 +218,6 @@
           "properties": {
             "label": {
               "type": "string"
-            },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
             },
             "type": {
               "pattern": "^string:[1-9][0-9]*$",
@@ -331,18 +246,6 @@
             },
             "min": {
               "type": "number"
-            },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
             },
             "type": {
               "anyOf": [
@@ -387,18 +290,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -439,18 +330,6 @@
             "label": {
               "type": "string"
             },
-            "role": {
-              "enum": [
-                "process_value",
-                "setpoint",
-                "command",
-                "mode",
-                "status",
-                "alarm",
-                "counter",
-                "message"
-              ]
-            },
             "type": {
               "anyOf": [
                 {
@@ -475,6 +354,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "unit": {
+              "type": "string"
             }
           },
           "type": "object"
