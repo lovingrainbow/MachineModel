@@ -1,0 +1,32 @@
+schema_version: 2
+machine:
+  id: demo
+  title: 示範機台
+  plcs:
+    - { id: plc1, family: inovance_easy }
+    - { id: plc2, family: mitsubishi_fx3g, online: false }
+units:
+  - id: cyl1
+    type: cylinder_double
+    type_version: 1
+    bind:
+      lim_ext: plc1.X_Cyl1_Ext_LS
+      lim_ret: null
+      valve_ext: plc1.Y_Cyl1_Ext
+      man_ext: plc1.M_Cyl1_ManExt
+  - id: machine
+    type: machine_ctrl
+    type_version: 1
+    bind:
+      stn: cyl1
+tags:
+  - { id: plc1.X_Cyl1_Ext_LS, address: X010, type: bool, polarity: NO, safety_monitor: false }
+  - { id: plc1.Y_Cyl1_Ext, address: Y10, type: bool }
+  - { id: plc1.M_Cyl1_ManExt, address: M100, type: bool }
+  - { id: plc1.D_ExtTime, address: D100, type: int16, min: 0, max: 30000, default: 3000, unit: ms, scan: slow }
+  - { id: plc1.D_Temp, address: D200, type: float32, scale: 0.1, offset: 0, deadband: 0.5, unit: degC, role: process_value }
+  - { id: plc1.R_Bit, address: R10.3, type: bool, retain: true, readback: true, spare: true }
+  - { id: plc1.D_Name, address: D300, type: 'string:8', default: abc, ext: { inovance: { seq: 1 } } }
+  - { id: plc2.X007, address: X007, type: bool }
+variables:
+  - { id: plc1.V_Mode, type: int16, default: 0, retain: true }

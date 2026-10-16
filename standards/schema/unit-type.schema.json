@@ -1,0 +1,648 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "ctrl": {
+      "patternProperties": {
+        "^at_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "^cmd_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "^count_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "^ena_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "^error_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "enum": [
+                "warning",
+                "abnormal",
+                "emergency"
+              ]
+            },
+            "message": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "reset": {
+              "enum": [
+                "auto",
+                "manual"
+              ]
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "enum": [
+                "bool"
+              ]
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "type": "object"
+        },
+        "^man_": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "momentary",
+                "toggle"
+              ]
+            },
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "^msg_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "pattern": "^string:[1-9][0-9]*$",
+              "type": "string"
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        "^par_": {
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "type": "number"
+            },
+            "label": {
+              "type": "string"
+            },
+            "max": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "min",
+            "max",
+            "default"
+          ],
+          "type": "object"
+        },
+        "^pv_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        "^sts_": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "process_value",
+                "setpoint",
+                "command",
+                "mode",
+                "status",
+                "alarm",
+                "counter",
+                "message"
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "bool",
+                    "int16",
+                    "uint16",
+                    "int32",
+                    "uint32",
+                    "int64",
+                    "uint64",
+                    "float32",
+                    "float64"
+                  ]
+                },
+                {
+                  "pattern": "^string:[1-9][0-9]*$",
+                  "type": "string"
+                },
+                {
+                  "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "unevaluatedProperties": false
+    },
+    "field": {
+      "additionalProperties": false,
+      "properties": {
+        "in": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "bool",
+                      "int16",
+                      "uint16",
+                      "int32",
+                      "uint32",
+                      "int64",
+                      "uint64",
+                      "float32",
+                      "float64"
+                    ]
+                  },
+                  {
+                    "pattern": "^string:[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          "propertyNames": {
+            "not": {
+              "pattern": "^(cmd|man|ena|par|at|sts|error|count|pv|msg)_"
+            }
+          },
+          "type": "object"
+        },
+        "out": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "bool",
+                      "int16",
+                      "uint16",
+                      "int32",
+                      "uint32",
+                      "int64",
+                      "uint64",
+                      "float32",
+                      "float64"
+                    ]
+                  },
+                  {
+                    "pattern": "^string:[1-9][0-9]*$",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+                    "type": "string"
+                  }
+                ]
+              },
+              "unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          "propertyNames": {
+            "not": {
+              "pattern": "^(cmd|man|ena|par|at|sts|error|count|pv|msg)_"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "id": {
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "type": "string"
+    },
+    "parts": {
+      "additionalProperties": {
+        "not": {
+          "anyOf": [
+            {
+              "enum": [
+                "bool",
+                "int16",
+                "uint16",
+                "int32",
+                "uint32",
+                "int64",
+                "uint64",
+                "float32",
+                "float64"
+              ]
+            },
+            {
+              "pattern": "^string:[1-9][0-9]*$",
+              "type": "string"
+            },
+            {
+              "pattern": "^(bool|int16|uint16|int32|uint32|int64|uint64|float32|float64)\\[([1-9]|[1-9][0-9]|[1-4][0-9][0-9]|500)\\]$",
+              "type": "string"
+            }
+          ]
+        },
+        "type": "string"
+      },
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9_]+$"
+      },
+      "type": "object"
+    },
+    "title": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "title"
+  ],
+  "title": "Unit 類型檔",
+  "type": "object"
+}
