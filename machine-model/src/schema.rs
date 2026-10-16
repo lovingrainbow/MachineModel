@@ -3,7 +3,7 @@
 //! Tag 沒有 `unit_id`（歸屬由父層 `bind` 宣告）、`writable`、`write_permission`
 //! （最終可寫由 `PlcDataService` 決定，規格 §6.3）。
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::family::Family;
 use crate::strict::{Ext, StrictMap};
@@ -88,7 +88,7 @@ pub struct UnitInstance {
     pub bind: StrictMap<Option<String>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Scan {
     Fast,
@@ -96,7 +96,7 @@ pub enum Scan {
     Slow,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Role {
     ProcessValue,
@@ -109,7 +109,7 @@ pub enum Role {
     Message,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Polarity {
     #[serde(rename = "NO")]
     NormallyOpen,
@@ -118,7 +118,7 @@ pub enum Polarity {
 }
 
 /// `default` 的值。順序影響 untagged 解析：布林、整數、浮點、字串。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Scalar {
     Bool(bool),
@@ -173,7 +173,7 @@ impl Tag {
 }
 
 /// 沒有軟元件位址的 PLC 變數。`address` 欄位只為了在有人誤填時報 `R25`。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Variable {
     pub id: String,

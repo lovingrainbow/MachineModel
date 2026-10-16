@@ -5,6 +5,8 @@
 
 use std::collections::BTreeMap;
 
+use serde::Serialize;
+
 use crate::address;
 use crate::catalog::UnitCatalog;
 use crate::family::Family;
@@ -16,7 +18,7 @@ use crate::schema::{
 use crate::strict::Ext;
 use crate::unit_type::{CtrlPin, PinRef};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResolvedModel {
     pub machine_id: String,
     pub plcs: Vec<ResolvedPlc>,
@@ -27,14 +29,14 @@ pub struct ResolvedModel {
     pub fingerprint: Fingerprint,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResolvedPlc {
     pub id: String,
     pub family: Family,
     pub online: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResolvedUnit {
     pub id: String,
     pub ty: String,
@@ -45,7 +47,7 @@ pub struct ResolvedUnit {
     pub bind: BTreeMap<String, Option<String>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum RoleSource {
     /// Tag 明確寫了 `role`。
     Explicit,
@@ -54,7 +56,7 @@ pub enum RoleSource {
     Unknown,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TagBinding {
     pub unit_id: String,
     pub unit_path: String,
@@ -64,7 +66,7 @@ pub struct TagBinding {
 }
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResolvedTag {
     pub id: String,
     pub address: String,
@@ -103,7 +105,7 @@ impl ResolvedTag {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResolvedPin {
     pub unit_id: String,
     pub unit_path: String,
@@ -120,7 +122,7 @@ pub struct ResolvedPin {
     pub default: Option<Scalar>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Fingerprint {
     /// `machine.yaml` 的內容雜湊（忽略換行差異）。
     pub source_hash: String,

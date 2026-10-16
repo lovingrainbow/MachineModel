@@ -4,9 +4,9 @@
 //! 只有 Inovance 的 `BOOL` 對 X／Y，以及三菱 X／Y 的 `bool` 經黃金案例驗證；
 //! 其餘範圍（尤其三菱的上限）標為待驗證，見各常數的註解。
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Family {
     InovanceEasy,

@@ -42,8 +42,8 @@ fn run() -> i32 {
     let cli = Cli::parse();
     match cli.command {
         Command::Check(args) => check::run(&args),
-        Command::Dump(args) => dump::run(args),
-        Command::CheckTypes(args) => check_types::run(args),
+        Command::Dump(args) => dump::run(&args),
+        Command::CheckTypes(args) => check_types::run(&args),
         Command::WriteReport(args) => write_report::run(args),
     }
 }

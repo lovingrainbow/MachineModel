@@ -26,12 +26,7 @@ pub fn run(args: &Args) -> i32 {
             return 2;
         }
     };
-    let types_dir = args
-        .machine
-        .parent()
-        .unwrap_or_else(|| std::path::Path::new("."))
-        .join("types");
-    let catalog = match load_catalog(&types_dir) {
+    let catalog = match catalog_beside(&args.machine) {
         Ok(c) => c,
         Err(code) => return code,
     };
@@ -57,12 +52,44 @@ pub fn run(args: &Args) -> i32 {
     }
 }
 
+/// `machine.yaml` 旁的 `types/` 疊加到標準類型目錄上（`check`、`dump` 共用）。
+pub(crate) fn catalog_beside(machine: &std::path::Path) -> Result<UnitCatalog, i32> {
+    let types_dir = machine
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("types");
+    load_catalog(&types_dir)
+}
+
 /// 以內嵌標準類型為基礎，疊加 `types/` 目錄的本地類型；目錄不存在視為沒有本地類型。
 /// I/O 失敗（含 `types` 不是目錄）回 `Err(2)`。
 fn load_catalog(dir: &std::path::Path) -> Result<UnitCatalog, i32> {
     if !dir.exists() {
         return Ok(UnitCatalog::standard());
     }
+    let files = read_type_files(dir)?;
+    let refs: Vec<(&str, &str)> = files
+        .iter()
+        .map(|(n, t)| (n.as_str(), t.as_str()))
+        .collect();
+    match UnitCatalog::standard().with_local(&refs) {
+        Ok((catalog, warnings)) => {
+            for d in &warnings {
+                eprintln!("{d}");
+            }
+            Ok(catalog)
+        }
+        Err(diags) => {
+            for d in &diags {
+                eprintln!("{d}");
+            }
+            Err(1)
+        }
+    }
+}
+
+/// 讀取目錄下的 `*.yaml`，依路徑排序。目錄或檔案讀不到回 `Err(2)`。
+pub(crate) fn read_type_files(dir: &std::path::Path) -> Result<Vec<(String, String)>, i32> {
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(e) => {
@@ -95,24 +122,7 @@ fn load_catalog(dir: &std::path::Path) -> Result<UnitCatalog, i32> {
         }
     }
     files.sort_by(|a, b| a.0.cmp(&b.0));
-    let refs: Vec<(&str, &str)> = files
-        .iter()
-        .map(|(n, t)| (n.as_str(), t.as_str()))
-        .collect();
-    match UnitCatalog::standard().with_local(&refs) {
-        Ok((catalog, warnings)) => {
-            for d in &warnings {
-                eprintln!("{d}");
-            }
-            Ok(catalog)
-        }
-        Err(diags) => {
-            for d in &diags {
-                eprintln!("{d}");
-            }
-            Err(1)
-        }
-    }
+    Ok(files)
 }
 
 fn print_report(model: &machine_model::resolve::ResolvedModel) {

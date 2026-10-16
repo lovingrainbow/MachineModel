@@ -223,6 +223,13 @@ pub fn default_label(function: &str) -> Option<&'static str> {
     })
 }
 
+/// 以前綴名稱（`cmd`、`man`…）序列化，與 `machine.yaml` 與類型檔的寫法一致。
+impl serde::Serialize for Prefix {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.info().name)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

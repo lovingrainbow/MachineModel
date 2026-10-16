@@ -8,7 +8,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use serde::de::{Error, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StrictMap<V>(pub BTreeMap<String, V>);
@@ -26,6 +26,13 @@ impl<V> StrictMap<V> {
 
     pub fn get(&self, key: &str) -> Option<&V> {
         self.0.get(key)
+    }
+}
+
+/// 序列化時與普通 map 相同（重複鍵已在讀取端擋下，這裡不需要特別處理）。
+impl<V: Serialize> Serialize for StrictMap<V> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(serializer)
     }
 }
 
@@ -56,7 +63,7 @@ impl<'de, V: Deserialize<'de>> Deserialize<'de> for StrictMap<V> {
 }
 
 /// `ext` 內的值：只接受字串、整數、布林。
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ExtValue {
     Bool(bool),
