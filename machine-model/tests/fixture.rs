@@ -1,6 +1,6 @@
 use machine_model::{load, parse, validate};
 
-const FULL: &str = include_str!("fixtures/valid_full.yaml");
+const FULL: &str = include_str!("fixtures/structural_full.yaml");
 
 #[test]
 fn full_fixture_loads_with_no_diagnostics() {

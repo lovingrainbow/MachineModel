@@ -16,7 +16,7 @@ units:
       man_ext: plc1.M_Cyl1_ManExt
   - id: machine
     type: machine_ctrl
-    type_version: 1
+    type_version: 2
     bind:
       stn: cyl1
 tags:
