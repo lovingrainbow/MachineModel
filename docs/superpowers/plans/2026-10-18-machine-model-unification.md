@@ -199,7 +199,7 @@ plc-common                      家族表、ScalarType、ScalarValue（已完成
 
 ### Task 5.1: 標準類型與範例資料升版
 - 以 MachineModel `standards/` 為準；`datasvc-demo/config/machine.yaml` 升到 `machine_ctrl` version 2，修正 `st1` 的 `bind` 使其符合 `station_load`（階段 1 實測：目前報 U2、U3）。
-- 驗證：`cargo run -p machinemodel -- check DataService/crates/datasvc-demo/config/machine.yaml` 通過。
+- [x] 驗證：`cargo run -p machinemodel -- check DataService/crates/datasvc-demo/config/machine.yaml` 通過。
 
 ### Task 5.2: `plc-data-service` 換型別
 - `DataService/crates/plc-data-service/Cargo.toml` 依賴改指向 `../../../MachineModel/machine-model`；`effective_tags` → `tags`、`data_type` → `ty`、`ScanRate` → `Scan`、`bindings[].category == "error"` → `prefix == Some(Prefix::Error)`、`readback`／`retain` 的 `Option<bool>` 在**消費端** `unwrap_or(false)`（規格預設為 false，查 §3.2 確認後再寫）。
@@ -211,6 +211,8 @@ plc-common                      家族表、ScalarType、ScalarValue（已完成
 
 ### Task 5.4: `src-tauri` 換依賴
 - 同步改 Cargo 路徑與型別；`cargo check -p plc-data-service-tauri`（該 crate 的 lib 測試在 WSL 內會 SIGSEGV，是環境問題，不納入判定）。
+
+**階段 5 狀態（2026-10-18）：5.1～5.4 已完成並 commit（路徑依賴）；尚待：切換為 git tag 依賴（需 MachineModel 打 tag 並推送）。**
 
 **階段 5 完成條件：** DataService `cargo test --workspace`（除 tauri 的 SIGSEGV 項外）全過、clippy 不增加警告、`datasvc-demo` 手動跑得起來，且 `DataService/crates/machine-model` 已無任何人引用。
 
