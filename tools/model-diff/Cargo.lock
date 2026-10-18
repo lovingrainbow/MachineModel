@@ -66,6 +66,7 @@ dependencies = [
 [[package]]
 name = "plc-common"
 version = "0.1.0"
+source = "git+https://github.com/lovingrainbow/plc-common?tag=v0.1.0#06ebe2de3274a7112653f1d67df46857bc9ce6c9"
 dependencies = [
  "serde",
 ]

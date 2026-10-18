@@ -2,7 +2,7 @@
 
 日期：2026-10-18。工具：`tools/model-diff`（自成工作區，不在 MachineModel 的 members 內；原因：兩個同名 crate 會讓 `cargo tree -p machine-model` 含糊）。
 
-重跑：
+重跑（`tools/model-diff` 已於階段 6 刪除，以下指令僅供回溯，需自行還原工具）：
 
     cargo run --manifest-path tools/model-diff/Cargo.toml -- tools/model-diff/fixtures/*
     python3 tools/model-diff/make-mutants.py   # 重新產生 fixtures/mut_*
