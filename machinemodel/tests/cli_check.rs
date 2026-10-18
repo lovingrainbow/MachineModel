@@ -160,3 +160,70 @@ fn local_types_flag_is_removed_exits_2() {
         .expect("無法執行 machinemodel");
     assert_eq!(out.status.code(), Some(2), "已移除的旗標應回 2");
 }
+
+const PUMP_ST: &str = "\
+FUNCTION_BLOCK pump_x
+VAR_IN_OUT
+    ctrl : ST_pump_x;
+END_VAR
+IF ctrl.cmd_run THEN
+    ;
+END_IF;
+END_FUNCTION_BLOCK
+";
+
+fn pump_dir(name: &str, st: Option<(&str, &str)>) -> std::path::PathBuf {
+    let dir = fresh_dir(name);
+    std::fs::create_dir(dir.join("types")).unwrap();
+    std::fs::write(dir.join("types/pump_x.yaml"), PUMP_TYPE).unwrap();
+    if let Some((file, text)) = st {
+        std::fs::write(dir.join("types").join(file), text).unwrap();
+    }
+    std::fs::write(dir.join("machine.yaml"), PUMP_MODEL).unwrap();
+    dir
+}
+
+#[test]
+fn valid_st_sidecar_next_to_a_local_type_passes() {
+    let dir = pump_dir("cli-check-st-ok", Some(("pump_x.st", PUMP_ST)));
+    let out = check_path(&dir.join("machine.yaml"));
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "stderr={}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
+fn invalid_st_sidecar_exits_1_with_rule_code() {
+    let bad = PUMP_ST.replace("ctrl.cmd_run", "ctrl.cmd_nope");
+    let dir = pump_dir("cli-check-st-bad", Some(("pump_x.st", &bad)));
+    let out = check_path(&dir.join("machine.yaml"));
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("[U22]") && stderr.contains("cmd_nope"),
+        "{stderr}"
+    );
+}
+
+#[test]
+fn st_sidecar_without_a_type_file_exits_1_with_sc5() {
+    let dir = pump_dir("cli-check-st-orphan", Some(("ghost.st", PUMP_ST)));
+    let out = check_path(&dir.join("machine.yaml"));
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("[SC5]"));
+}
+
+#[test]
+fn check_types_runs_st_rules_on_local_sidecars() {
+    let bad = PUMP_ST.replace("END_IF;", "");
+    let dir = pump_dir("cli-check-types-st", Some(("pump_x.st", &bad)));
+    let out = Command::new(binary())
+        .args(["check-types", &dir.join("types").display().to_string()])
+        .output()
+        .expect("無法執行 machinemodel");
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("[U24]"));
+}

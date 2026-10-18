@@ -56,7 +56,7 @@ v2 移除 `devices[]`、`alarms[]`、`parameters[]`、Tag 的 `writable` 與 `wr
 - 一台機台是一棵樹，根為保留 Unit 實例 `machine`。
 - **歸屬由父層宣告**：父 Unit 以 `bind` 指向子 Unit 或 Tag。每個 Unit／Tag 至多一個父層，不得成環。
 - 只有包含關係，模型內沒有共用或引用；降階時用 struct 傳遞只是匯出手法（§7）。
-- FB 內部的 `local` 變數不在模型內。標準裝置 FB 的 ST 由工程師手寫，模型只檢查接腳與 ST 的 `VAR_INPUT`／`VAR_OUTPUT` 是否一致（檢查本身延到 P4，見 §11）。
+- FB 內部的 `local` 變數不在模型內。標準裝置 FB 的 ST 由工程師手寫，放在類型檔旁的 `.st` 旁檔（§4.3）；模型只檢查接腳與 ST 的 `VAR_INPUT`／`VAR_OUTPUT` 是否一致（U20～U25，P4）。
 
 ---
 
@@ -181,6 +181,29 @@ Schema 由命名規則表（§5）產生，不手寫。檔案：`standards/schem
 - `field.in.*`／`field.out.*` 的 `propertyNames` 用 `not: { pattern: "^(cmd|man|ena|par|at|sts|error|count|pv|msg)_" }`。
 - `ctrl` 的 `patternProperties`：每個前綴一條，各自指定必填屬性與預設（例：`^par_` 要求 `type`、`min`、`max`、`default`；`^error_` 要求 `message`；`^pv_`、`^msg_` 要求 `type`）。不符任何前綴的名稱因 `additionalProperties: false` 而失敗，訊息指向前綴表。
 
+### 4.3 ST 旁檔（P4）
+
+依據：《H5U&Easy 系列可編程邏輯控制器編程手冊》V4.12.0.0（`docs/`）§8.1（LiteST）、§7.3（變數）、FB 章節。AutoShop 的 LiteST **只有程式本體**；FB 的接腳、區域變數、結構、全域變數都在 IDE 表格內宣告，沒有文字形式的 `FUNCTION_BLOCK`／`VAR_INPUT`。因此旁檔是**本專案的原始檔格式**，匯出時拆成 AutoShop 的表格與純本體（§9.5）。
+
+- 位置：與類型檔同資料夾、同 id：`standards/unit-types/<id>.st`；機台本地為 `types/<id>.st`。類型檔文法不變（不加 `st:` 欄位）。
+- 格式（類 IEC 文字）：
+
+  ```
+  FUNCTION_BLOCK cylinder_double
+  VAR_INPUT    lim_ext : BOOL; END_VAR        // 對應 field.in
+  VAR_OUTPUT   valve_ext : BOOL; END_VAR      // 對應 field.out
+  VAR_IN_OUT   ctrl : ST_cylinder_double; END_VAR   // ctrl 腳的 struct（§7），名稱固定為 ctrl
+  VAR          tExt : INT; END_VAR            // 區域變數，不對應模型
+  // 程式本體（LiteST）
+  END_FUNCTION_BLOCK
+  ```
+  - `ctrl` 的成員由類型檔 `ctrl` 腳機械導出（§7）；本體以 `ctrl.<接腳名>` 存取。
+  - `parts` 以 `VAR_IN_OUT <part名> : ST_<part類型id>` 宣告。
+- 型別限 LiteST 可用者：`BOOL`、`INT`、`DINT`、`REAL`、`STRING`、`BYTE`（陣列與結構另計）。標量詞彙對照：`bool→BOOL`、`int16→INT`、`int32→DINT`、`float32→REAL`、`string:N→STRING`；`uint16`、`uint32`、`int64`、`uint64`、`float64` 無對應型別，出現在匯出範圍內即為 U25。
+- 目標方言：Inovance H5U／Easy 的 LiteST（H5U 韌體 ≥ V5.14.0.0、Easy 韌體 ≥ V5.67.0.0、AutoShop ≥ V4.8.1.0；使用 `REGION` 需韌體 ≥ V6.5.0.0、AutoShop ≥ V4.11.0.0）。其他廠牌方言不在 P4。
+- 驗證器（U21～U24）是輕量掃描器，只用 `std`，**不是**完整 ST 解析器；型別相容與變數是否宣告過交給 IDE 編譯。
+- 標準類型的 `.st` 與類型檔一併內嵌、一併釘選：雜湊涵蓋兩者，改 ST 必須調高 `version`（§9.1）。
+
 ---
 
 ## 5. 命名規則（前綴表）
@@ -247,6 +270,8 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 - struct 由 `ctrl` 腳機械導出；`field` 腳在實例宣告／呼叫處綁定。
 - 父層只可寫子 `ctrl` 的 `in` 腳、讀 `out` 腳。
 - 未降階（FB 型）形式延後，不在本規格範圍。
+- Inovance Easy／H5U 的 `INOUT` 是「呼叫時複製進去、執行後複製回來」，不共用同一塊記憶體（手冊 FB 章節）。父層寫子 `ctrl` 的 `in` 腳、呼叫後讀 `out` 腳的流程不受影響；但呼叫之外對 struct 的寫入（例如 HMI 在掃描週期中改值）只在下次呼叫時才進入 FB。
+- FB 巢狀最多 8 層、子程式 6 層、FB／FC 內部定義總量 100 K（手冊）。匯出時超過即失敗。
 
 ---
 
@@ -267,6 +292,7 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 - SC2：類型檔結構（§4.2）。
 - SC3：前綴合法與各前綴必要屬性。
 - SC4：任何位置的未知欄位為錯誤（延續 P1 R22，含 `writable`、`write_permission`、`unit_id`、`devices`、`alarms`、`parameters`）。
+- SC5：`.st` 旁檔沒有對應的類型檔，或同一類型有重複旁檔（§4.3）。
 
 ### 8.3 U 規則（程式碼）
 
@@ -291,6 +317,12 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 | U17 | 類型 id 在同一來源內唯一：同一資料夾內重複為錯誤；本地類型與標準同 id 為覆蓋，產生提示（§9.1），不是錯誤 |
 | U18 | `parts` 引用的類型存在於目錄，且類型之間的 `parts` 關係無環（含自我引用） |
 | U19 | `error_` 接腳的型別必須是 bool |
+| U20 | 匯出 ST 時，被使用的 Unit 類型必須有 `.st` 旁檔（§4.3）；`check` 不要求 |
+| U21 | `.st` 恰有一個 `FUNCTION_BLOCK`，名稱等於類型 id |
+| U22 | `.st` 的 `VAR_INPUT`／`VAR_OUTPUT` 與 `field.in`／`field.out` 的名稱、方向、型別一致；`VAR_IN_OUT` 恰有 `ctrl`（型別 `ST_<id>`）與 `parts` 各項；本體引用的 `ctrl.<名>` 必須是 `ctrl` 腳 |
+| U23 | `.st` 只可使用 LiteST 手冊列出的語句與型別：`:=`、FB 呼叫、`IF`／`ELSIF`／`ELSE`、`CASE`、`WHILE`、`REPEAT`、`FOR`、`EXIT`、`CONTINUE`、`RETURN`、`REGION`；關鍵字須為 `ELSIF`（非 `ELSEIF`）；FB 呼叫的輸出實參不得是運算式；本體不得超過 1000 行（§11 #19） |
+| U24 | `.st` 結構成對：`IF`／`END_IF`、`FOR`／`END_FOR`、`WHILE`／`END_WHILE`、`REPEAT`／`END_REPEAT`、`CASE`／`END_CASE`、`REGION`／`END_REGION`、`VAR*`／`END_VAR`、`FUNCTION_BLOCK`／`END_FUNCTION_BLOCK`；去除註解與字串後判定 |
+| U25 | 匯出時，Tag 與接腳型別必須有 LiteST 對應型別（§4.3）；沒有對應者列出 Tag／接腳並失敗，不靜默轉型 |
 
 型別字串須為標量詞彙；`string:N` 的長度上限等 Schema 樣式表達不了的部分，由 `DataType::parse` 檢查並以 `SC3` 回報。
 
@@ -321,7 +353,7 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 - 標準 Unit 類型檔（本專案 `standards/unit-types/*.yaml`）在編譯時以 `include_str!` 內嵌至函式庫，現場部署只需單一 `machine.yaml`（v2），不需額外的 types 目錄，也不產生 `machine.resolved.yaml`。
 - 機台本地特化類型：機台資料夾（`machine.yaml` 所在的資料夾）下的 `types/*.yaml`，**自動讀取**，不需任何旗標；同 id 時覆蓋標準並產生提示。命令列工具與 PlcDataService 採同一規則。
 - **版本固定**：`units[].type_version`（§3.1）必須等於載入時目錄中該類型的 `version`，不符就是載入錯誤（U2），**不得靜默採用**。理由：設計期用新版類型檔通過檢查、現場 binary 內嵌舊版時，兩邊對同一 Tag 推導出不同的 `write_candidate`，屬安全相關差異。
-- 類型檔內容改變而不調高 `version` 屬違規；專案測試以內容雜湊釘住每個標準類型的 `version`。
+- 類型檔內容改變而不調高 `version` 屬違規；專案測試以內容雜湊釘住每個標準類型的 `version`。雜湊涵蓋類型檔與其 `.st` 旁檔（§4.3）；無旁檔時雜湊與只算類型檔相同，既有釘選不受影響。
 
 ### 9.2 解析結果（函式庫輸出）
 
@@ -366,6 +398,7 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 - `dump <machine.yaml>`：傾印解析結果（§9.2）為 YAML／JSON，供審查與 diff。
 - `check-types [<資料夾>]`：檢查類型檔（含 JSON Schema，需 `schema` feature）與標準目錄。
 - `write-report <machine.yaml> --service <service.toml>`：列出最終可寫清單與覆寫差異（§9.3）。
+- `export-st <machine.yaml> --out <資料夾>`（P4）：依 §7 降階，輸出 AutoShop 可用的資料：每個 FB 的純本體 `.st`、MAIN 本體、結構／全域變數／FB 介面／FB 實例的表格（CSV，格式見 §11 #21）、`symbols.csv`（符號→Tag id）。輸出與 `write_candidate`、`writable`、`safety_monitor` 無關，**不產生任何互鎖或護欄邏輯**；安全條件由工程師寫在 FB 的 ST（`ena_` 腳）。
 - 退出碼：0 通過、1 有錯誤、2 用法或檔案讀寫錯誤。
 - HMI 引用檢查（§9.4 第一級）在需要時再加。
 
@@ -395,7 +428,7 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 | 3 | ctrl 介面 Tag 位址來源 | 新機台由工具配置、既有機台由工程師提供，兩者並存 |
 | 4 | 平面舊機台的 `derived` 虛擬輸出 | 延後 |
 | 5 | 根 Unit `machine` 的最小框架（模式集合、`auto_running`） | 先給最小類型 `machine_ctrl`，完整框架留 P6 |
-| 6 | FB 的 ST ↔ 類型檔一致性檢查 | 延到 P4 |
+| 6 | FB 的 ST ↔ 類型檔一致性檢查 | **已決**：`.st` 旁檔（§4.3）＋輕量驗證器 U20～U25（P4） |
 | 7 | Unit 陣列（`cyl[8]`） | 延後 |
 | 8 | `bind` 的常數／運算式 | 保留，v2 不接受 |
 | 9 | `Role` 無 `param` 值 | 沿用 `setpoint` |
@@ -408,6 +441,10 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 | 16 | P1 同步核心（I/O 表匯入匯出、漂移比對、變更清單：`aia-core`、`aia-cli`）如何遷移到 v2 | 待決；V1 暫停期間它與 `datasvc-core` 仍使用 AIAutomation 內的 v1 `machine-model`，需等本專案可用後逐一遷移，另開計畫 |
 | 17 | PlcDataService 覆寫設定放 `service.toml` 還是獨立檔 | 建議放 `service.toml` 的 `[[tag_override]]`，隨機台資料夾版本管理 |
 | 18 | 命令列工具名稱與發行方式 | 暫名 `machinemodel`；先隨原始碼建置，之後再決定預建二進位 |
+| 19 | Inovance LiteST 的語法限制（U23）與宣告方式 | **已依手冊決定**（§4.3）；手冊為 V4.12.0.0，需對照使用者實際的 AutoShop／韌體版本 |
+| 20 | ST 匯出是否生成互鎖 | **已決：否**（P4 與安全護欄無關） |
+| 21 | AutoShop 變數表／結構／FB 的 CSV 匯入匯出格式與可否匯入 | **待使用者在 AutoShop 確認**；手冊只說明可匯出 CSV（FAQ 29.7），未給欄位。確認前表格輸出標「未經實機驗證」，退路為逐行對照表供手動貼上 |
+| 22 | `uint16`、`uint32`、`int64`、`uint64`、`float64` 在 Inovance 無對應型別 | 暫以 U25 於匯出時報錯；是否改為限制 Tag 型別或自動換型，待決 |
 
 ---
 
@@ -421,5 +458,6 @@ IR 保留樹狀；匯出器預設輸出降階形式：
 4. **PlcDataService 整合**（AIAutomation 專案 `runtime/datasvc`）：`model_source` 改用函式庫；`[[tag_override]]` 與護欄；API 帶 `writable` 與來源。
 5. **貼標機黃金案例重構**（AIAutomation 專案 `machines/`）。
 6. **AIAutomation 遷移**：`aia-core`／`aia-cli` 改用 v2、移除內部 `model/machine-model`（待決 #16）。
+7. **ST 匯出（P4）**：`.st` 旁檔、驗證器 U20～U25、`export-st`；先做 Inovance 精簡版。計畫見 `plans/2026-10-18-plan-4-st-codegen.md`。（本文其他處的「P4」即指本項，與此清單序號無關。）
 
-不在範圍：ST 產生器（P4）、機台框架（P6）、未降階的 FB 型匯出、HMI 整合（§9.4 第二、三級）。
+不在範圍：其他廠牌的 ST 方言、範本 CRUD（Unit 類型檔＋旁檔已取代）、ST 內互鎖生成、機台框架（P6）、未降階的 FB 型匯出、HMI 整合（§9.4 第二、三級）。

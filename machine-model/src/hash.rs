@@ -15,3 +15,13 @@ pub fn content_hash(text: &str) -> u64 {
 pub fn hex(value: u64) -> String {
     format!("{value:016x}")
 }
+
+/// 類型的釘選雜湊（規格 §9.1）：類型檔，加上 `.st` 旁檔（有的話）。
+///
+/// 沒有旁檔時與 [`content_hash`]`(yaml)` 完全相同，所以既有釘選不受影響。
+pub fn type_hash(yaml: &str, st: Option<&str>) -> u64 {
+    match st {
+        None => content_hash(yaml),
+        Some(st) => content_hash(&format!("{yaml}\0{st}")),
+    }
+}

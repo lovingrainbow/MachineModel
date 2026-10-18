@@ -3,19 +3,23 @@ use std::path::PathBuf;
 
 use machine_model::catalog::UnitCatalog;
 use machine_model::diag::Severity;
-use machine_model::hash::{content_hash, hex};
-use machine_model::standard::standard_sources;
+use machine_model::hash::{content_hash, hex, type_hash};
+use machine_model::standard::{standard_sources, standard_st_sources};
 use machine_model::unit_type::parse_unit_type;
 
 const PINS: &str = include_str!("../../standards/unit-types.pins");
 
-/// 目前內嵌的每個標準類型：id → (version, 雜湊)。
+/// 目前內嵌的每個標準類型：id → (version, 雜湊)。雜湊涵蓋類型檔與 `.st` 旁檔（規格 §9.1）。
 fn actual() -> BTreeMap<String, (u32, String)> {
     standard_sources()
         .iter()
         .map(|(label, text)| {
             let t = parse_unit_type(label, text).expect("標準類型必須能解析");
-            (t.id, (t.version, hex(content_hash(text))))
+            let st = standard_st_sources()
+                .iter()
+                .find(|(id, _)| *id == t.id)
+                .map(|(_, st)| *st);
+            (t.id, (t.version, hex(type_hash(text, st))))
         })
         .collect()
 }
@@ -133,4 +137,53 @@ fn spec_example_types_are_present() {
         c.get("machine_ctrl").unwrap().parts.get("stn").unwrap(),
         "station_load"
     );
+}
+
+#[test]
+fn every_st_file_in_the_standards_directory_is_embedded() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../standards/unit-types");
+    let mut on_disk: Vec<String> = std::fs::read_dir(&dir)
+        .expect("找不到 standards/unit-types")
+        .filter_map(|e| {
+            let path = e.expect("目錄項").path();
+            let is_st = path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("st"));
+            is_st.then(|| path.file_stem().unwrap().to_string_lossy().into_owned())
+        })
+        .collect();
+    on_disk.sort();
+    let mut embedded: Vec<String> = standard_st_sources()
+        .iter()
+        .map(|(id, _)| (*id).to_owned())
+        .collect();
+    embedded.sort();
+    assert_eq!(
+        on_disk, embedded,
+        "新增標準旁檔後要加進 standard.rs 的 STANDARD_ST，並更新 pins"
+    );
+}
+
+#[test]
+fn embedded_st_files_match_the_files_on_disk() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../standards/unit-types");
+    for (id, text) in standard_st_sources() {
+        let on_disk = std::fs::read_to_string(dir.join(format!("{id}.st")))
+            .unwrap_or_else(|e| panic!("讀不到 {id}.st：{e}"));
+        assert_eq!(content_hash(text), content_hash(&on_disk), "{id}.st");
+    }
+}
+
+#[test]
+fn every_embedded_sidecar_belongs_to_a_standard_type() {
+    let ids: Vec<String> = standard_sources()
+        .iter()
+        .map(|(label, text)| parse_unit_type(label, text).unwrap().id)
+        .collect();
+    for (id, _) in standard_st_sources() {
+        assert!(
+            ids.iter().any(|i| i == id),
+            "旁檔 `{id}` 沒有對應的標準類型"
+        );
+    }
 }

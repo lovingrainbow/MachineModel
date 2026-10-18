@@ -15,6 +15,7 @@ pub mod rules;
 pub mod schema;
 #[cfg(feature = "schema")]
 pub mod schema_gen;
+pub mod st_check;
 pub mod standard;
 pub mod strict;
 mod type_rules;

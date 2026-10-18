@@ -72,7 +72,20 @@ fn load_catalog(dir: &std::path::Path) -> Result<UnitCatalog, i32> {
         .iter()
         .map(|(n, t)| (n.as_str(), t.as_str()))
         .collect();
-    match UnitCatalog::standard().with_local(&refs) {
+    let st_files = read_st_files(dir)?;
+    let st_refs: Vec<(&str, &str)> = st_files
+        .iter()
+        .map(|(n, t)| (n.as_str(), t.as_str()))
+        .collect();
+    let built = UnitCatalog::standard()
+        .with_local(&refs)
+        .and_then(|(catalog, mut warnings)| {
+            catalog.with_st(&st_refs).map(|(c, more)| {
+                warnings.extend(more);
+                (c, warnings)
+            })
+        });
+    match built {
         Ok((catalog, warnings)) => {
             for d in &warnings {
                 eprintln!("{d}");
@@ -90,6 +103,22 @@ fn load_catalog(dir: &std::path::Path) -> Result<UnitCatalog, i32> {
 
 /// 讀取目錄下的 `*.yaml`，依路徑排序。目錄或檔案讀不到回 `Err(2)`。
 pub(crate) fn read_type_files(dir: &std::path::Path) -> Result<Vec<(String, String)>, i32> {
+    read_files_with_extension(dir, "yaml", |path| path.display().to_string())
+}
+
+/// 讀取目錄下的 `*.st` 旁檔，回傳 `(類型 id, 內容)`；類型 id 取檔名（不含副檔名）。
+pub(crate) fn read_st_files(dir: &std::path::Path) -> Result<Vec<(String, String)>, i32> {
+    read_files_with_extension(dir, "st", |path| {
+        path.file_stem()
+            .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
+    })
+}
+
+fn read_files_with_extension(
+    dir: &std::path::Path,
+    extension: &str,
+    name_of: impl Fn(&std::path::Path) -> String,
+) -> Result<Vec<(String, String)>, i32> {
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(e) => {
@@ -109,12 +138,12 @@ pub(crate) fn read_type_files(dir: &std::path::Path) -> Result<Vec<(String, Stri
         let path = entry.path();
         if path
             .extension()
-            .is_none_or(|e| !e.eq_ignore_ascii_case("yaml"))
+            .is_none_or(|e| !e.eq_ignore_ascii_case(extension))
         {
             continue;
         }
         match std::fs::read_to_string(&path) {
-            Ok(text) => files.push((path.display().to_string(), text)),
+            Ok(text) => files.push((name_of(&path), text)),
             Err(e) => {
                 eprintln!("無法讀取 {}：{e}", path.display());
                 return Err(2);

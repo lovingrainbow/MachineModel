@@ -4,7 +4,7 @@
 //! 再對合併後的目錄執行類型層規則（U1、U12、U15、U18、U19），並對每個來源檔做 SC2／SC3 驗證。
 
 use machine_model::catalog::UnitCatalog;
-use machine_model::standard::standard_sources;
+use machine_model::standard::{standard_sources, standard_st_sources};
 use machine_model::unit_type::validate_unit_type;
 
 use crate::check;
@@ -37,7 +37,14 @@ pub fn run(args: &Args) -> i32 {
         }
         ok &= errs.is_empty();
     }
-    let merged = merge_catalog(&standard, &locals);
+    let local_st = match &args.dir {
+        None => Vec::new(),
+        Some(dir) => match check::read_st_files(dir) {
+            Ok(files) => files,
+            Err(code) => return code,
+        },
+    };
+    let merged = merge_catalog(&standard, &locals, &local_st);
     let catalog = match merged {
         Ok((catalog, warnings)) => {
             for d in &warnings {
@@ -61,10 +68,12 @@ pub fn run(args: &Args) -> i32 {
     0
 }
 
-/// 以標準來源建目錄，再疊加本地來源（同 id 覆蓋並產生提示；同層重複是 U17）。
+/// 以標準來源建目錄（含標準旁檔），再疊加本地來源與本地旁檔
+/// （同 id 覆蓋並產生提示；同層重複是 U17）。
 fn merge_catalog(
     standard: &[(String, String)],
     locals: &[(String, String)],
+    local_st: &[(String, String)],
 ) -> machine_model::catalog::Built {
     let std_refs: Vec<(&str, &str)> = standard
         .iter()
@@ -74,8 +83,14 @@ fn merge_catalog(
         .iter()
         .map(|(n, t)| (n.as_str(), t.as_str()))
         .collect();
-    match UnitCatalog::from_sources(&std_refs) {
-        Ok((base, _)) => base.with_local(&local_refs),
-        Err(diags) => Err(diags),
-    }
+    let local_st_refs: Vec<(&str, &str)> = local_st
+        .iter()
+        .map(|(n, t)| (n.as_str(), t.as_str()))
+        .collect();
+    let (base, _) = UnitCatalog::from_sources(&std_refs)?;
+    let (base, _) = base.with_st(standard_st_sources())?;
+    let (merged, mut diags) = base.with_local(&local_refs)?;
+    let (merged, more) = merged.with_st(&local_st_refs)?;
+    diags.extend(more);
+    Ok((merged, diags))
 }
