@@ -4,7 +4,7 @@
 
 use std::fmt;
 
-use crate::family::{ClassProfile, Family};
+use crate::family::{ClassProfile, Family, Grammar, OPAQUE_CLASS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Address {
@@ -54,7 +54,17 @@ pub fn parse(family: Family, text: &str) -> Result<Address, AddressError> {
         .unwrap_or(text.len());
     let letters = text[..letters_end].to_ascii_uppercase();
     let rest = &text[letters_end..];
-    let classes = family.profile().classes;
+    // 非空語法（如 `DB1.DBW0`、標籤名）只檢查非空，不解析前綴與範圍
+    let classes = match family.grammar() {
+        Grammar::Opaque => {
+            return Ok(Address {
+                class: &OPAQUE_CLASS,
+                number: 0,
+                bit: None,
+            });
+        }
+        Grammar::Classes(classes) => classes,
+    };
     let Some(class) = classes.iter().find(|c| c.name == letters) else {
         return Err(AddressError::UnknownClass(letters));
     };
@@ -105,99 +115,118 @@ mod tests {
 
     #[test]
     fn octal_x_is_not_decimal() {
-        let a = p(Family::InovanceEasy, "X010").unwrap();
+        let a = p(Family::InovanceEasyTcp, "X010").unwrap();
         assert_eq!(a.number, 8);
-        let b = p(Family::InovanceEasy, "X7").unwrap();
-        let c = p(Family::InovanceEasy, "X007").unwrap();
+        let b = p(Family::InovanceEasyTcp, "X7").unwrap();
+        let c = p(Family::InovanceEasyTcp, "X007").unwrap();
         assert_eq!(b, c);
     }
 
     #[test]
     fn octal_class_rejects_digits_8_and_9() {
         assert!(matches!(
-            p(Family::InovanceEasy, "X008"),
+            p(Family::InovanceEasyTcp, "X008"),
             Err(AddressError::BadNumber(_))
         ));
         assert!(matches!(
-            p(Family::MitsubishiFx3g, "Y019"),
+            p(Family::MelsecFxSerialTcp, "Y019"),
             Err(AddressError::BadNumber(_))
         ));
     }
 
     #[test]
     fn decimal_classes_accept_8_and_9() {
-        assert_eq!(p(Family::InovanceEasy, "M19").unwrap().number, 19);
-        assert_eq!(p(Family::InovanceEasy, "D100").unwrap().number, 100);
+        assert_eq!(p(Family::InovanceEasyTcp, "M19").unwrap().number, 19);
+        assert_eq!(p(Family::InovanceEasyTcp, "D100").unwrap().number, 100);
     }
 
     #[test]
     fn longest_class_name_wins_and_case_is_ignored() {
-        let a = p(Family::InovanceEasy, "sd10").unwrap();
+        let a = p(Family::InovanceEasyTcp, "sd10").unwrap();
         assert_eq!(a.class.name, "SD");
-        let b = p(Family::InovanceEasy, "S10").unwrap();
+        let b = p(Family::InovanceEasyTcp, "S10").unwrap();
         assert_eq!(b.class.name, "S");
     }
 
     #[test]
     fn range_limits() {
-        assert!(p(Family::InovanceEasy, "X1777").is_ok());
+        assert!(p(Family::InovanceEasyTcp, "X1777").is_ok());
         assert!(matches!(
-            p(Family::InovanceEasy, "X2000"),
+            p(Family::InovanceEasyTcp, "X2000"),
             Err(AddressError::OutOfRange { .. })
         ));
-        assert!(p(Family::InovanceEasy, "D7999").is_ok());
+        assert!(p(Family::InovanceEasyTcp, "D7999").is_ok());
         assert!(matches!(
-            p(Family::InovanceEasy, "D8000"),
+            p(Family::InovanceEasyTcp, "D8000"),
             Err(AddressError::OutOfRange { .. })
         ));
     }
 
     #[test]
     fn bit_suffix_on_d_and_r_but_not_other_classes() {
-        let a = p(Family::InovanceEasy, "R100.15").unwrap();
+        let a = p(Family::InovanceEasyTcp, "R100.15").unwrap();
         assert_eq!(a.bit, Some(15));
-        let d = p(Family::InovanceEasy, "D0.1").unwrap();
+        let d = p(Family::InovanceEasyTcp, "D0.1").unwrap();
         assert_eq!((d.number, d.bit), (0, Some(1)));
         assert!(matches!(
-            p(Family::InovanceEasy, "R100.16"),
+            p(Family::InovanceEasyTcp, "R100.16"),
             Err(AddressError::BadBit(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "R100."),
+            p(Family::InovanceEasyTcp, "R100."),
             Err(AddressError::BadBit(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "M100.1"),
+            p(Family::InovanceEasyTcp, "M100.1"),
             Err(AddressError::BitNotAllowed("M"))
         ));
     }
 
     #[test]
     fn malformed_addresses() {
-        assert_eq!(p(Family::InovanceEasy, ""), Err(AddressError::Empty));
+        assert_eq!(p(Family::InovanceEasyTcp, ""), Err(AddressError::Empty));
         assert!(matches!(
-            p(Family::InovanceEasy, "Q10"),
+            p(Family::InovanceEasyTcp, "Q10"),
             Err(AddressError::UnknownClass(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "X"),
+            p(Family::InovanceEasyTcp, "X"),
             Err(AddressError::BadNumber(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "X 10"),
+            p(Family::InovanceEasyTcp, "X 10"),
             Err(AddressError::BadNumber(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "X+7"),
+            p(Family::InovanceEasyTcp, "X+7"),
             Err(AddressError::BadNumber(_))
         ));
         assert!(matches!(
-            p(Family::InovanceEasy, "D99999999999"),
+            p(Family::InovanceEasyTcp, "D99999999999"),
             Err(AddressError::BadNumber(_))
         ));
         assert!(matches!(
-            p(Family::MitsubishiFx3g, "D100"),
+            p(Family::MelsecFxSerialTcp, "D100"),
             Err(AddressError::UnknownClass(_))
+        ));
+    }
+
+    #[test]
+    fn opaque_families_accept_any_non_empty_address() {
+        let a = p(Family::SiemensS7_1200, "DB1.DBW0").unwrap();
+        assert!(a.class.opaque);
+        assert!(p(Family::AllenBradleyCip, "Program:Main.HeaterPV").is_ok());
+        assert_eq!(p(Family::SiemensS7_1200, ""), Err(AddressError::Empty));
+    }
+
+    #[test]
+    fn hexadecimal_classes_parse_digits_a_to_f() {
+        let a = p(Family::MelsecMcBinary, "X1F").unwrap();
+        assert_eq!(a.number, 0x1F);
+        assert!(a.class.read_only);
+        assert!(matches!(
+            p(Family::MelsecMcBinary, "X1G"),
+            Err(AddressError::BadNumber(_))
         ));
     }
 }

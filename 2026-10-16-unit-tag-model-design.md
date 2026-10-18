@@ -95,7 +95,7 @@ units:
       stn: st1
 ```
 
-- `machine`：`id`、`title`、`plcs[]`（`id`、`title`、`family`、`online`、`diff_scope`、`sources`），欄位與現有 `machine-model` 實作相同。`family` 目前為 `inovance_easy`、`mitsubishi_fx3g`、`mitsubishi_fx3s`；家族的位址類別、範圍與可用協定是資料表，屬本專案。
+- `machine`：`id`、`title`、`plcs[]`（`id`、`title`、`family`、`online`、`diff_scope`、`sources`），欄位與現有 `machine-model` 實作相同。`family` 為 PLC 驅動型號，共 55 種，見 §3.3。
 - `variables[]`：保留，無位址的 PLC 變數；沿用現有欄位，移除 `unit_id`；不得有 `address`。
 - `units[]`：`id`（唯一）、`type`（類型檔 id）、**`type_version`（必填整數，必須等於目錄中該類型的 `version`，不符即錯誤，見 U2）**、`bind`（map：接腳名或 part 名 → 值）。扁平清單，以 id 互相引用。
 - `bind` 值只有兩種形式：字串 id，或 `null`。含 `.` 的字串是 Tag id（格式 `plc<N>.<Name>`，PLC 必須已宣告）；不含 `.` 的字串是 Unit id；`null` 是刻意不接。常數與運算式為保留，v1 不接受。
@@ -119,6 +119,18 @@ units:
 | `ext` | map | 廠牌擴充 `ext.<廠牌>.<欄位>`，唯一的擴充通道 |
 
 **沒有** `unit_id`、`writable`、`write_permission`；寫了即為未知欄位（`R22`）。
+
+### 3.3 PLC 家族（驅動型號）與位址語法
+
+`plcs[].family` 的值是 **PLC 驅動型號**，名稱與 DataService `mm-drivers` 的驅動型錄相同（例如 `inovance_easy_tcp`、`siemens_s7_1200`、`melsec_mc_binary`）。本專案收錄 **55 種 PLC 驅動**；非 PLC 的驅動（機器人、CNC、儀表、讀碼器、扭力槍、內建模擬器）不得作為 `family`。
+
+- 舊名保留為別名：`inovance_easy` 等同 `inovance_easy_tcp`；`mitsubishi_fx3g` 與 `mitsubishi_fx3s` 分別等同 `melsec_fx_serial_tcp` 與 `melsec_fx_links_tcp`。後兩者的對應待實機確認。
+- 位址語法分兩類（資料表 `machine-model/src/family.rs` 的 `Grammar`）：
+  - **前綴表**（`classes`）：位址為「前綴＋編號」，可接 `.位元`；前綴必須在表中，編號與位元依表檢查。
+  - **非空**（`opaque`）：位址有結構性語法（如 `DB1.DBW0`、`N7:0`、標籤名稱），只檢查非空，不檢查範圍、型別與重疊。共 15 種：三菱 CIP、西門子 S7-1200／1500／300／400 與 FetchWrite、歐姆龍 CIP、Allen-Bradley 五種、倍福 ADS、富士 SPH 與 CS。
+- 來源與可信度：前綴取自驅動型錄的位址範例；進位與字／位元寬度依廠商慣例；**範圍一律為暫用上限 65535，未經實機或手冊驗證**，並在 `family.rs` 註解標明。例外：匯川 Easy 的 `X`／`Y`（八進位、唯讀）與三菱 FX 的 `X`／`Y` 沿用既有驗證。
+- 連線協定即家族對應的驅動，`service.toml` 不另外指定協定；`online: true` 的家族皆可連線。
+- 連線參數（IP、COM 埠、逾時）仍在 `service.toml`，不進模型（§9.3）。
 
 ---
 

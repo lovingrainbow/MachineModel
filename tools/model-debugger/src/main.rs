@@ -54,10 +54,10 @@ fn setup_custom_fonts(ctx: &egui::Context) {
             );
 
             if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Proportional) {
-                family.push("cjk_fallback".to_owned());
+                family.insert(0, "cjk_fallback".to_owned());
             }
             if let Some(family) = fonts.families.get_mut(&egui::FontFamily::Monospace) {
-                family.push("cjk_fallback".to_owned());
+                family.insert(0, "cjk_fallback".to_owned());
             }
             break;
         }
@@ -101,6 +101,68 @@ fn setup_custom_fonts(ctx: &egui::Context) {
 mod tests {
     use crate::io_import::{generate_inovance_easy_preset, parse_delimited, parse_yaml_tags};
     use crate::model::ProjectModel;
+
+    #[test]
+    fn test_cjk_font_loading() {
+        let ctx = eframe::egui::Context::default();
+        super::setup_custom_fonts(&ctx);
+        let _ = ctx.run(eframe::egui::RawInput::default(), |ctx| {
+            let font_id = eframe::egui::FontId::proportional(14.0);
+            let galley = ctx.fonts(|f| {
+                f.layout_no_wrap(
+                    "中文標籤測試".to_string(),
+                    font_id,
+                    eframe::egui::Color32::WHITE,
+                )
+            });
+            println!("galley text: {}, size: {:?}", galley.text(), galley.size());
+            assert!(!galley.rows.is_empty());
+        });
+    }
+
+    #[test]
+    fn test_textedit_enter_retains_focus_with_return_key_none() {
+        let ctx = eframe::egui::Context::default();
+        let mut text = "測試標籤".to_string();
+
+        // 1. First frame: focus the widget
+        let _ = ctx.run(eframe::egui::RawInput::default(), |ctx| {
+            eframe::egui::CentralPanel::default().show(ctx, |ui| {
+                let resp = ui.add(
+                    eframe::egui::TextEdit::singleline(&mut text)
+                        .id_salt("lbl_test")
+                        .return_key(None),
+                );
+                resp.request_focus();
+            });
+        });
+
+        // 2. Second frame: simulate pressing Enter key (as sent by IME candidate confirmation)
+        let mut raw_input = eframe::egui::RawInput::default();
+        raw_input.events.push(eframe::egui::Event::Key {
+            key: eframe::egui::Key::Enter,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: eframe::egui::Modifiers::NONE,
+        });
+
+        let _ = ctx.run(raw_input, |ctx| {
+            eframe::egui::CentralPanel::default().show(ctx, |ui| {
+                let resp = ui.add(
+                    eframe::egui::TextEdit::singleline(&mut text)
+                        .id_salt("lbl_test")
+                        .return_key(None),
+                );
+                // With return_key(None), it MUST NOT lose focus!
+                assert!(
+                    !resp.lost_focus(),
+                    "return_key(None) should prevent losing focus on Enter"
+                );
+                assert!(resp.has_focus(), "Widget should retain focus after Enter");
+            });
+        });
+    }
 
     #[test]
     fn test_demo_project_loads_and_passes_validation() {
@@ -172,12 +234,12 @@ mod tests {
         let mut p = ProjectModel::new_empty(
             "test_machine",
             Some("測試機台".to_string()),
-            Family::MitsubishiFx3g,
+            Family::MelsecFxSerialTcp,
         );
         assert_eq!(p.machine_id, "test_machine");
         assert_eq!(p.machine_title.as_deref(), Some("測試機台"));
         assert_eq!(p.plcs.len(), 1);
-        assert_eq!(p.plcs[0].family, Family::MitsubishiFx3g);
+        assert_eq!(p.plcs[0].family, Family::MelsecFxSerialTcp);
         assert!(p.units.is_empty());
         assert!(p.tags.is_empty());
 
@@ -188,7 +250,7 @@ mod tests {
         // 匯出成 YAML 字串
         let yaml = p.to_yaml_string();
         assert!(yaml.contains("id: test_machine"));
-        assert!(yaml.contains("family: mitsubishi_fx3g"));
+        assert!(yaml.contains("family: melsec_fx_serial_tcp"));
         assert!(yaml.contains("type: photoelectric_sensor"));
 
         // 讀回 YAML
@@ -196,7 +258,7 @@ mod tests {
             .expect("YAML 應可還原為 ProjectModel");
         assert_eq!(loaded.machine_id, "test_machine");
         assert_eq!(loaded.machine_title.as_deref(), Some("測試機台"));
-        assert_eq!(loaded.plcs[0].family, Family::MitsubishiFx3g);
+        assert_eq!(loaded.plcs[0].family, Family::MelsecFxSerialTcp);
         assert_eq!(loaded.units.len(), 1);
         assert_eq!(loaded.units[0].id, "sensor1");
     }

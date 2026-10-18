@@ -50,16 +50,6 @@ pub(super) fn check_machine_and_plcs<'a>(
         if !seen.insert(plc.id.as_str()) {
             out.push(Diagnostic::error("R21", &loc, "PLC id 重複"));
         }
-        if plc.online && plc.family.profile().protocols.is_empty() {
-            out.push(Diagnostic::error(
-                "R21",
-                &loc,
-                format!(
-                    "家族 {} 沒有可用的連線協定，必須設為 online: false",
-                    plc.family.as_str()
-                ),
-            ));
-        }
     }
     seen
 }

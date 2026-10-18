@@ -196,7 +196,7 @@ impl Default for ModelDebuggerApp {
             show_new_project_modal: false,
             new_project_machine_id: "machine_01".to_string(),
             new_project_title: "新機台專案".to_string(),
-            new_project_family: Family::InovanceEasy,
+            new_project_family: Family::InovanceEasyTcp,
             new_project_template_is_demo: false,
 
             show_open_file_modal: false,
@@ -441,6 +441,7 @@ impl ModelDebuggerApp {
                     if ui
                         .add(
                             egui::TextEdit::singleline(&mut self.project.machine_id)
+                                .return_key(None)
                                 .desired_width(100.0),
                         )
                         .changed()
@@ -451,7 +452,11 @@ impl ModelDebuggerApp {
                     ui.label(RichText::new("機台標題:").strong());
                     let mut title_buf = self.project.machine_title.clone().unwrap_or_default();
                     if ui
-                        .add(egui::TextEdit::singleline(&mut title_buf).desired_width(140.0))
+                        .add(
+                            egui::TextEdit::singleline(&mut title_buf)
+                                .return_key(None)
+                                .desired_width(140.0),
+                        )
                         .changed()
                     {
                         self.project.machine_title = if title_buf.trim().is_empty() {
@@ -470,17 +475,9 @@ impl ModelDebuggerApp {
                         egui::ComboBox::from_id_salt("plc_family_combo")
                             .selected_text(current_family.as_str())
                             .show_ui(ui, |ui| {
-                                for f in [
-                                    Family::InovanceEasy,
-                                    Family::MitsubishiFx3g,
-                                    Family::MitsubishiFx3s,
-                                ] {
+                                for &f in Family::ALL {
                                     if ui
-                                        .selectable_value(
-                                            &mut first_plc.family,
-                                            f,
-                                            format!("{} ({})", f.as_str(), family_desc(f)),
-                                        )
+                                        .selectable_value(&mut first_plc.family, f, f.as_str())
                                         .clicked()
                                     {
                                         // changed
@@ -514,14 +511,6 @@ impl ModelDebuggerApp {
                     });
                 });
             });
-    }
-}
-
-fn family_desc(f: Family) -> &'static str {
-    match f {
-        Family::InovanceEasy => "匯川 Easy / H5U 系列",
-        Family::MitsubishiFx3g => "三菱 FX3G",
-        Family::MitsubishiFx3s => "三菱 FX3S",
     }
 }
 
@@ -1538,6 +1527,7 @@ impl ModelDebuggerApp {
             ui.label(RichText::new("🔍 搜尋:").strong());
             ui.add(
                 egui::TextEdit::singleline(&mut self.tag_search)
+                    .return_key(None)
                     .hint_text("搜尋 ID、位址或標籤...")
                     .desired_width(180.0),
             );
@@ -1818,6 +1808,7 @@ impl ModelDebuggerApp {
                     ui.label(RichText::new("🔍 搜尋:").strong());
                     ui.add(
                         egui::TextEdit::singleline(&mut self.catalog_search_query)
+                            .return_key(None)
                             .desired_width(ui.available_width() - 8.0)
                             .hint_text("輸入 ID 或名稱關鍵字..."),
                     );
@@ -2382,31 +2373,21 @@ impl ModelDebuggerApp {
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
                 ui.label(RichText::new("機台 ID (Machine ID，必填識別碼):").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.new_project_machine_id));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.new_project_machine_id).return_key(None),
+                );
 
                 ui.add_space(4.0);
                 ui.label(RichText::new("機台名稱 / 標題 (Title):").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.new_project_title));
+                ui.add(egui::TextEdit::singleline(&mut self.new_project_title).return_key(None));
 
                 ui.add_space(6.0);
                 ui.label(RichText::new("主 PLC 系列 (PLC Family):").strong());
                 egui::ComboBox::from_id_salt("new_project_family_combo")
-                    .selected_text(format!(
-                        "{} ({})",
-                        self.new_project_family.as_str(),
-                        family_desc(self.new_project_family)
-                    ))
+                    .selected_text(self.new_project_family.as_str())
                     .show_ui(ui, |ui| {
-                        for f in [
-                            Family::InovanceEasy,
-                            Family::MitsubishiFx3g,
-                            Family::MitsubishiFx3s,
-                        ] {
-                            ui.selectable_value(
-                                &mut self.new_project_family,
-                                f,
-                                format!("{} ({})", f.as_str(), family_desc(f)),
-                            );
+                        for &f in Family::ALL {
+                            ui.selectable_value(&mut self.new_project_family, f, f.as_str());
                         }
                     });
 
@@ -2506,6 +2487,7 @@ impl ModelDebuggerApp {
                     ui.label("檔案路徑:");
                     ui.add(
                         egui::TextEdit::singleline(&mut self.open_file_path_input)
+                            .return_key(None)
                             .desired_width(ui.available_width() - 8.0)
                             .hint_text("machine.yaml 或 /path/to/machine.yaml"),
                     );
@@ -2521,7 +2503,7 @@ impl ModelDebuggerApp {
                     let quick_paths = [
                         "machine.yaml",
                         "machine-model/tests/fixtures/structural_full.yaml",
-                        "tests/fixtures/valid_units.yaml",
+                        "machine-model/tests/fixtures/valid_units.yaml",
                     ];
                     for qp in quick_paths {
                         if ui.button(RichText::new(qp).small()).clicked() {
@@ -2623,6 +2605,7 @@ impl ModelDebuggerApp {
                     ui.label("目標路徑:");
                     ui.add(
                         egui::TextEdit::singleline(&mut self.save_as_path_input)
+                            .return_key(None)
                             .desired_width(ui.available_width() - 8.0)
                             .hint_text("machine.yaml"),
                     );
@@ -2716,7 +2699,13 @@ impl ModelDebuggerApp {
                 ui.label(RichText::new("單元識別碼 (Unit ID):").strong());
                 ui.add(
                     egui::TextEdit::singleline(&mut self.new_unit_id)
+                        .return_key(None)
                         .hint_text("例如 cyl2、station_load_2"),
+                );
+                ui.label(
+                    RichText::new("ℹ️ 識別碼依規範限用英文字母開頭之識別碼（如 cyl2）")
+                        .color(Color32::GRAY)
+                        .small(),
                 );
 
                 ui.add_space(6.0);
@@ -2742,6 +2731,12 @@ impl ModelDebuggerApp {
                 ui.label(
                     RichText::new(format!("模板版本: v{}", selected_ver))
                         .color(Color32::GRAY)
+                        .small(),
+                );
+                ui.add_space(4.0);
+                ui.label(
+                    RichText::new("💡 說明：Unit 實例由 ID 與類型模板組成；若需自訂各腳位的中文標籤與警報說明，請至「Unit 類型庫」分頁中新建或修改類型。")
+                        .color(Color32::from_rgb(160, 200, 220))
                         .small(),
                 );
 
@@ -2802,7 +2797,7 @@ impl ModelDebuggerApp {
 
                 ui.add_space(6.0);
                 ui.label(RichText::new("新 ID:").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.rename_unit_new));
+                ui.add(egui::TextEdit::singleline(&mut self.rename_unit_new).return_key(None));
 
                 ui.add_space(10.0);
                 ui.horizontal(|ui| {
@@ -2857,10 +2852,10 @@ impl ModelDebuggerApp {
                 ui.add_space(6.0);
 
                 ui.label(RichText::new("Tag ID:").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_id));
+                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_id).return_key(None));
 
                 ui.label(RichText::new("PLC 位址:").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_address));
+                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_address).return_key(None));
 
                 ui.label(RichText::new("資料型別:").strong());
                 egui::ComboBox::from_id_salt("quick_tag_ty_combo")
@@ -2872,7 +2867,7 @@ impl ModelDebuggerApp {
                     });
 
                 ui.label(RichText::new("標籤名稱 / 說明:").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_label));
+                ui.add(egui::TextEdit::singleline(&mut self.quick_tag_label).return_key(None));
 
                 ui.add_space(10.0);
                 ui.horizontal(|ui| {
@@ -3207,7 +3202,7 @@ impl ModelDebuggerApp {
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
                 ui.label(RichText::new("來源名稱 / 檔名:").strong());
-                ui.add(egui::TextEdit::singleline(&mut self.custom_type_source_name));
+                ui.add(egui::TextEdit::singleline(&mut self.custom_type_source_name).return_key(None));
 
                 ui.add_space(6.0);
                 ui.label(RichText::new("UnitType YAML 內容:").strong());
@@ -3287,10 +3282,10 @@ impl ModelDebuggerApp {
                 ui.set_width(380.0);
 
                 ui.label(RichText::new("Tag ID:").strong());
-                ui.add(egui::TextEdit::singleline(&mut tag.id));
+                ui.add(egui::TextEdit::singleline(&mut tag.id).return_key(None));
 
                 ui.label(RichText::new("PLC 位址:").strong());
-                ui.add(egui::TextEdit::singleline(&mut tag.address));
+                ui.add(egui::TextEdit::singleline(&mut tag.address).return_key(None));
 
                 ui.label(RichText::new("資料型別:").strong());
                 egui::ComboBox::from_id_salt("edit_tag_ty_combo")
@@ -3305,7 +3300,10 @@ impl ModelDebuggerApp {
 
                 ui.label(RichText::new("標籤 (Label):").strong());
                 let mut label_str = tag.label.clone().unwrap_or_default();
-                if ui.add(egui::TextEdit::singleline(&mut label_str)).changed() {
+                if ui
+                    .add(egui::TextEdit::singleline(&mut label_str).return_key(None))
+                    .changed()
+                {
                     tag.label = if label_str.trim().is_empty() {
                         None
                     } else {
@@ -3315,7 +3313,10 @@ impl ModelDebuggerApp {
 
                 ui.label(RichText::new("工程單位 (Unit):").strong());
                 let mut unit_str = tag.unit.clone().unwrap_or_default();
-                if ui.add(egui::TextEdit::singleline(&mut unit_str)).changed() {
+                if ui
+                    .add(egui::TextEdit::singleline(&mut unit_str).return_key(None))
+                    .changed()
+                {
                     tag.unit = if unit_str.trim().is_empty() {
                         None
                     } else {
@@ -3403,9 +3404,9 @@ impl ModelDebuggerApp {
             .open(&mut open)
             .collapsible(false)
             .resizable(true)
-            .default_size([920.0, 720.0])
-            .min_width(750.0)
-            .min_height(500.0)
+            .default_size([1040.0, 740.0])
+            .min_width(880.0)
+            .min_height(520.0)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
                 // 基本資訊列
@@ -3413,6 +3414,7 @@ impl ModelDebuggerApp {
                     ui.label(RichText::new("類型識別碼 (ID):").strong());
                     let id_edit = ui.add(
                         egui::TextEdit::singleline(&mut self.type_editor_state.draft.id)
+                            .return_key(None)
                             .desired_width(180.0)
                             .hint_text("例如: custom_feeder"),
                     );
@@ -3438,6 +3440,7 @@ impl ModelDebuggerApp {
                     ui.label(RichText::new("顯示名稱 (title):").strong());
                     let title_edit = ui.add(
                         egui::TextEdit::singleline(&mut self.type_editor_state.draft.title)
+                            .return_key(None)
                             .desired_width(220.0)
                             .hint_text("例如: 震動送料機單元"),
                     );
@@ -3483,9 +3486,10 @@ impl ModelDebuggerApp {
                         let mut remove_ctrl = None;
                         let mut remove_part = None;
 
-                        egui::ScrollArea::vertical()
+                        egui::ScrollArea::both()
                             .id_salt("type_editor_visual_scroll")
-                            .max_height(420.0)
+                            .auto_shrink([false, false])
+                            .max_height(480.0)
                             .show(ui, |ui| {
                                 // 1. Field In 區塊
                                 ui.group(|ui| {
@@ -3532,7 +3536,7 @@ impl ModelDebuggerApp {
                                     } else {
                                         egui::Grid::new("field_in_grid")
                                             .num_columns(6)
-                                            .spacing([8.0, 4.0])
+                                            .spacing([10.0, 6.0])
                                             .striped(true)
                                             .show(ui, |ui| {
                                                 ui.label(
@@ -3543,10 +3547,10 @@ impl ModelDebuggerApp {
                                                 );
                                                 ui.label(RichText::new("必要").strong().small());
                                                 ui.label(
-                                                    RichText::new("中文標籤").strong().small(),
+                                                    RichText::new("中文標籤 (Label)").strong().small(),
                                                 );
                                                 ui.label(
-                                                    RichText::new("工程單位").strong().small(),
+                                                    RichText::new("工程單位 (Unit)").strong().small(),
                                                 );
                                                 ui.label(RichText::new("操作").strong().small());
                                                 ui.end_row();
@@ -3559,11 +3563,14 @@ impl ModelDebuggerApp {
                                                     .enumerate()
                                                 {
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [130.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.name,
                                                             )
-                                                            .desired_width(120.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fin_name_{}", idx))
+                                                            .hint_text("例如: sens1"),
                                                         )
                                                         .changed()
                                                     {
@@ -3603,11 +3610,14 @@ impl ModelDebuggerApp {
                                                     }
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [240.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.label,
                                                             )
-                                                            .desired_width(140.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fin_lbl_{}", idx))
+                                                            .hint_text("例如: 氣缸伸出到位檢測開關"),
                                                         )
                                                         .changed()
                                                     {
@@ -3615,11 +3625,14 @@ impl ModelDebuggerApp {
                                                     }
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [110.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.unit,
                                                             )
-                                                            .desired_width(70.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fin_unit_{}", idx))
+                                                            .hint_text("例如: mm、kPa"),
                                                         )
                                                         .changed()
                                                     {
@@ -3691,7 +3704,7 @@ impl ModelDebuggerApp {
                                     } else {
                                         egui::Grid::new("field_out_grid")
                                             .num_columns(6)
-                                            .spacing([8.0, 4.0])
+                                            .spacing([10.0, 6.0])
                                             .striped(true)
                                             .show(ui, |ui| {
                                                 ui.label(
@@ -3702,10 +3715,10 @@ impl ModelDebuggerApp {
                                                 );
                                                 ui.label(RichText::new("必要").strong().small());
                                                 ui.label(
-                                                    RichText::new("中文標籤").strong().small(),
+                                                    RichText::new("中文標籤 (Label)").strong().small(),
                                                 );
                                                 ui.label(
-                                                    RichText::new("工程單位").strong().small(),
+                                                    RichText::new("工程單位 (Unit)").strong().small(),
                                                 );
                                                 ui.label(RichText::new("操作").strong().small());
                                                 ui.end_row();
@@ -3718,11 +3731,14 @@ impl ModelDebuggerApp {
                                                     .enumerate()
                                                 {
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [130.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.name,
                                                             )
-                                                            .desired_width(120.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fout_name_{}", idx))
+                                                            .hint_text("例如: act1"),
                                                         )
                                                         .changed()
                                                     {
@@ -3762,11 +3778,14 @@ impl ModelDebuggerApp {
                                                     }
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [240.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.label,
                                                             )
-                                                            .desired_width(140.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fout_lbl_{}", idx))
+                                                            .hint_text("例如: 氣缸伸出電磁閥線圈"),
                                                         )
                                                         .changed()
                                                     {
@@ -3774,11 +3793,14 @@ impl ModelDebuggerApp {
                                                     }
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [110.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.unit,
                                                             )
-                                                            .desired_width(70.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("fout_unit_{}", idx))
+                                                            .hint_text("例如: mm、kPa"),
                                                         )
                                                         .changed()
                                                     {
@@ -3863,7 +3885,7 @@ impl ModelDebuggerApp {
                                     } else {
                                         egui::Grid::new("ctrl_pins_grid")
                                             .num_columns(6)
-                                            .spacing([8.0, 6.0])
+                                            .spacing([10.0, 6.0])
                                             .striped(true)
                                             .show(ui, |ui| {
                                                 ui.label(
@@ -3881,7 +3903,7 @@ impl ModelDebuggerApp {
                                                         .small(),
                                                 );
                                                 ui.label(
-                                                    RichText::new("中文標籤").strong().small(),
+                                                    RichText::new("中文標籤 (Label)").strong().small(),
                                                 );
                                                 ui.label(RichText::new("操作").strong().small());
                                                 ui.end_row();
@@ -3898,7 +3920,7 @@ impl ModelDebuggerApp {
                                                         idx
                                                     ))
                                                     .selected_text(&pin.prefix)
-                                                    .width(75.0)
+                                                    .width(80.0)
                                                     .show_ui(ui, |ui| {
                                                         for (p, desc) in &prefixes {
                                                             if ui
@@ -3929,11 +3951,13 @@ impl ModelDebuggerApp {
                                                     });
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [120.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.suffix,
                                                             )
-                                                            .desired_width(100.0)
+                                                            .return_key(None)
+                                                            .id_salt(format!("ctrl_suffix_{}", idx))
                                                             .hint_text("例如: start"),
                                                         )
                                                         .changed()
@@ -3954,11 +3978,13 @@ impl ModelDebuggerApp {
                                                         if pin.prefix == "par" {
                                                             ui.label("型別:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [60.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.ty,
                                                                     )
-                                                                    .desired_width(55.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_par_ty_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
@@ -3966,11 +3992,13 @@ impl ModelDebuggerApp {
                                                             }
                                                             ui.label("Min:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [50.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.min,
                                                                     )
-                                                                    .desired_width(45.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_par_min_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
@@ -3978,11 +4006,13 @@ impl ModelDebuggerApp {
                                                             }
                                                             ui.label("Max:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [50.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.max,
                                                                     )
-                                                                    .desired_width(45.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_par_max_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
@@ -3990,23 +4020,28 @@ impl ModelDebuggerApp {
                                                             }
                                                             ui.label("預設:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [50.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.default_val,
                                                                     )
-                                                                    .desired_width(45.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_par_def_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
                                                                 form_changed = true;
                                                             }
-                                                            ui.label("單位:");
+                                                            ui.label("工程單位:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [80.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.unit,
                                                                     )
-                                                                    .desired_width(45.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_par_unit_{}", idx))
+                                                                    .hint_text("單位"),
                                                                 )
                                                                 .changed()
                                                             {
@@ -4015,11 +4050,13 @@ impl ModelDebuggerApp {
                                                         } else if pin.prefix == "error" {
                                                             ui.label("警報說明*:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [240.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.message,
                                                                     )
-                                                                    .desired_width(180.0)
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_err_msg_{}", idx))
                                                                     .hint_text("必填警報文字"),
                                                                 )
                                                                 .changed()
@@ -4031,23 +4068,28 @@ impl ModelDebuggerApp {
                                                         {
                                                             ui.label("型別:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [65.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.ty,
                                                                     )
-                                                                    .desired_width(70.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_pv_ty_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
                                                                 form_changed = true;
                                                             }
-                                                            ui.label("單位:");
+                                                            ui.label("工程單位:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [80.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.unit,
                                                                     )
-                                                                    .desired_width(50.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_pv_unit_{}", idx))
+                                                                    .hint_text("單位"),
                                                                 )
                                                                 .changed()
                                                             {
@@ -4056,11 +4098,13 @@ impl ModelDebuggerApp {
                                                         } else {
                                                             ui.label("型別:");
                                                             if ui
-                                                                .add(
+                                                                .add_sized(
+                                                                    [60.0, 22.0],
                                                                     egui::TextEdit::singleline(
                                                                         &mut pin.ty,
                                                                     )
-                                                                    .desired_width(55.0),
+                                                                    .return_key(None)
+                                                                    .id_salt(format!("ctrl_gen_ty_{}", idx)),
                                                                 )
                                                                 .changed()
                                                             {
@@ -4070,11 +4114,14 @@ impl ModelDebuggerApp {
                                                     });
 
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [220.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut pin.label,
                                                             )
-                                                            .desired_width(120.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("ctrl_lbl_{}", idx))
+                                                            .hint_text("例如: 手動觸發動作"),
                                                         )
                                                         .changed()
                                                     {
@@ -4170,11 +4217,14 @@ impl ModelDebuggerApp {
                                                     .enumerate()
                                                 {
                                                     if ui
-                                                        .add(
+                                                        .add_sized(
+                                                            [180.0, 22.0],
                                                             egui::TextEdit::singleline(
                                                                 &mut slot.slot_name,
                                                             )
-                                                            .desired_width(160.0),
+                                                            .return_key(None)
+                                                            .id_salt(format!("part_slot_name_{}", idx))
+                                                            .hint_text("例如: clamp_cyl"),
                                                         )
                                                         .changed()
                                                     {
@@ -4186,7 +4236,7 @@ impl ModelDebuggerApp {
                                                         idx
                                                     ))
                                                     .selected_text(&slot.target_type)
-                                                    .width(180.0)
+                                                    .width(200.0)
                                                     .show_ui(ui, |ui| {
                                                         for t in &available_types {
                                                             if ui
@@ -4499,6 +4549,7 @@ impl ModelDebuggerApp {
                 ui.label(RichText::new("儲存檔案路徑:").strong());
                 ui.add(
                     egui::TextEdit::singleline(&mut self.export_type_path)
+                        .return_key(None)
                         .desired_width(f32::INFINITY)
                         .hint_text("例如: custom_types/my_unit.yaml"),
                 );

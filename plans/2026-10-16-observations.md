@@ -43,8 +43,8 @@
 
 - `tools/model-debugger` 是另行開發的應用，會使用 `machine-model` 做驗證測試。已完成，workspace 現在可以建置，`--all-features` 測試、clippy `-D warnings`、fmt 皆通過（2026-10-16）。
 - 該工具的快速開啟路徑已由 `valid_full.yaml` 改為 `structural_full.yaml`。
-- `tools/model-debugger` 目前尚未納入 git 追蹤，也還沒有提交；`Cargo.lock` 因其相依項（`eframe` 等）而有變更。
-- 同一個快速開啟清單中，`tests/fixtures/valid_units.yaml` 的路徑與實際位置（`machine-model/tests/fixtures/valid_units.yaml`）不一致，屬於該工具的問題，未修改。
+- `tools/model-debugger` 已納入 git 追蹤，目前有未提交的修改（2026-10-18 確認）。
+- 同一個快速開啟清單中，`valid_units.yaml` 的路徑原本與實際位置（`machine-model/tests/fixtures/valid_units.yaml`）不一致；2026-10-18 已在 `tools/model-debugger/src/app.rs` 修正，尚未提交。
 
 ## 8. 測試用 fixture 的角色
 

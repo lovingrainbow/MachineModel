@@ -55,6 +55,10 @@ fn check_tags(plcs: &[Plc], tags: &[Tag], out: &mut Vec<Diagnostic>) {
             continue; // R2 已回報
         };
         check_polarity(t, &ty, class, &loc, out);
+        // 非空語法沒有位址類別與範圍，不做型別、重疊檢查（見 family.rs 的可信度說明）
+        if class.opaque {
+            continue;
+        }
         if let Err(msg) = type_fits(class, &addr, &ty) {
             out.push(Diagnostic::error("R19", &loc, msg));
             continue;

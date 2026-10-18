@@ -112,7 +112,7 @@ impl ProjectModel {
 
         let plcs = vec![PlcConfig {
             id: "plc1".to_string(),
-            family: Family::InovanceEasy,
+            family: Family::InovanceEasyTcp,
             online: true,
         }];
 
