@@ -191,9 +191,9 @@ plc-common                      家族表、ScalarType、ScalarValue（已完成
 - Consumes: 階段 5 之前仍用 DataService 版 `ResolvedMachineModel`；階段 5 再改成 `machine_model::resolve::ResolvedModel`。
 - Produces: `TagOverrideEntry`、`evaluate_plc_data_service_writability`、`parse_service_toml_overrides`（簽名不變）。
 
-- [ ] **Step 1:** 搬移既有 DS1～DS3 測試到新位置，在舊位置保留並確認兩邊都過（階段 5 才刪舊的）。
-- [ ] **Step 2:** `cargo test -p plc-data-service` 全過；`datasvc-demo` 的 `service.toml` 範例結果與搬移前逐字相同。
-- [ ] **Step 3: Review Focus 測試** `override_cannot_make_safety_monitor_tag_writable`：護欄不因搬家而放寬。
+- [x] **Step 1:** 搬移既有 DS1～DS3 測試到新位置，在舊位置保留並確認兩邊都過（階段 5 才刪舊的）。
+- [x] **Step 2:** `cargo test -p plc-data-service` 全過；`datasvc-demo` 的 `service.toml` 範例結果與搬移前逐字相同。
+- [x] **Step 3: Review Focus 測試** `override_cannot_make_safety_monitor_tag_writable`：護欄不因搬家而放寬。
 
 ## 階段 5：DataService 改用 MachineModel（最大工作量）
 
