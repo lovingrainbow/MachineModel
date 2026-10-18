@@ -1,0 +1,11 @@
+id: station_load
+version: 1
+title: 上料站
+ctrl:
+  man_start:      { label: 啟動 }
+  man_stop:       { label: 停止 }
+  at_running:     {}
+  par_cycle_time: { type: int16, unit: ms, min: 0, max: 30000, default: 1000 }
+  count_done:     {}
+parts:
+  cyl: cylinder_double

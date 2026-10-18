@@ -236,3 +236,29 @@ units:\n  - {id: machine, type: ghost, type_version: 9, bind: {x: plc1.NOPE, y: 
     let r = resolve(&model, &UnitCatalog::standard(), text);
     assert!(r.tags.is_empty());
 }
+
+#[test]
+fn write_reason_names_the_binding_pin() {
+    let r = resolved();
+    let reason = r
+        .tag("plc1.M_Cyl1_ManExt")
+        .unwrap()
+        .write_candidate_reason();
+    assert!(reason.contains("cyl1.man_ext"), "{reason}");
+    assert!(reason.contains("man_*"), "{reason}");
+
+    let reason = r
+        .tag("plc1.X_Cyl1_Ext_LS")
+        .unwrap()
+        .write_candidate_reason();
+    assert!(reason.contains("cyl1.lim_ext"), "{reason}");
+    assert!(reason.contains("不是可寫候選"), "{reason}");
+}
+
+#[test]
+fn write_candidate_is_fail_closed_without_bindings() {
+    let r = resolved();
+    let t = r.tag("plc1.M_Spare").unwrap();
+    assert!(!t.write_candidate);
+    assert!(t.write_candidate_reason().contains("沒有綁定"));
+}

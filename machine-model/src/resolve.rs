@@ -103,6 +103,25 @@ impl ResolvedTag {
     pub fn binding(&self) -> Option<&TagBinding> {
         self.bindings.first()
     }
+
+    /// `write_candidate` 的理由（給人讀，規格 §6.2）。由 `bindings` 即時組成，不是儲存的欄位。
+    pub fn write_candidate_reason(&self) -> String {
+        let candidate = self
+            .bindings
+            .iter()
+            .find(|b| matches!(b.prefix, Some(Prefix::Man | Prefix::Par)));
+        if let Some(b) = candidate {
+            let name = b.prefix.map_or("", |p| p.info().name);
+            return format!("綁定至可寫候選接腳 `{}.{}`（{name}_*）", b.unit_id, b.pin);
+        }
+        match self.bindings.first() {
+            Some(b) => format!(
+                "綁定的接腳 `{}.{}` 不是可寫候選（只有 man_*、par_* 才是）",
+                b.unit_id, b.pin
+            ),
+            None => "沒有綁定任何 Unit 接腳（fail-closed，不可寫）".to_owned(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
