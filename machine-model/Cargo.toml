@@ -7,7 +7,7 @@ publish.workspace = true
 description = "machine.yaml v2（Unit／Tag 模型）的型別、解析、載入安全規則與推導"
 
 [dependencies]
-plc-common = { path = "../../plc-common" }
+plc-common = { git = "https://github.com/lovingrainbow/plc-common", tag = "v0.1.0" }
 serde = { workspace = true }
 serde_yaml_ng = { workspace = true }
 jsonschema = { version = "0.58.6", default-features = false, optional = true }
