@@ -87,7 +87,7 @@ fn check_default(
     let compatible = match (ty.scalar, default) {
         (ScalarType::Bool, Scalar::Bool(_))
         | (ScalarType::Float32 | ScalarType::Float64, Scalar::Int(_) | Scalar::Float(_)) => true,
-        (ScalarType::Text(n), Scalar::Text(s)) => s.len() <= n,
+        (ScalarType::Text(n), Scalar::Text(s)) => s.len() <= usize::from(n),
         (_, Scalar::Int(i)) => ty
             .int_bounds()
             .is_some_and(|(lo, hi)| (lo..=hi).contains(i)),

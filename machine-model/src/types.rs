@@ -2,23 +2,11 @@
 
 use std::fmt;
 
+pub use plc_common::ScalarType;
+use plc_common::ScalarTypeError;
+
 /// 陣列長度上限（與 `PlcDataService` 的 `MAX_ARRAY_LEN` 相同）。
 pub const MAX_ARRAY_LEN: usize = 500;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ScalarType {
-    Bool,
-    Int16,
-    Uint16,
-    Int32,
-    Uint32,
-    Int64,
-    Uint64,
-    Float32,
-    Float64,
-    /// `string:N`，N 為位元組長度。
-    Text(usize),
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DataType {
@@ -40,7 +28,7 @@ impl fmt::Display for TypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Unknown(t) => write!(f, "不認得的型別 `{t}`"),
-            Self::BadStringLength(n) => write!(f, "字串長度 `{n}` 無效，必須是至少為 1 的整數"),
+            Self::BadStringLength(n) => write!(f, "字串長度 `{n}` 無效，必須是 1 到 256 的整數"),
             Self::BadArrayLength(n) => {
                 write!(f, "陣列長度 `{n}` 無效，必須是 1 到 {MAX_ARRAY_LEN} 的整數")
             }
@@ -53,30 +41,13 @@ fn digits_only(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
 }
 
-fn parse_scalar(text: &str) -> Result<ScalarType, TypeError> {
-    Ok(match text {
-        "bool" => ScalarType::Bool,
-        "int16" => ScalarType::Int16,
-        "uint16" => ScalarType::Uint16,
-        "int32" => ScalarType::Int32,
-        "uint32" => ScalarType::Uint32,
-        "int64" => ScalarType::Int64,
-        "uint64" => ScalarType::Uint64,
-        "float32" => ScalarType::Float32,
-        "float64" => ScalarType::Float64,
-        other => {
-            let Some(n) = other.strip_prefix("string:") else {
-                return Err(TypeError::Unknown(text.to_owned()));
-            };
-            if !digits_only(n) {
-                return Err(TypeError::BadStringLength(n.to_owned()));
-            }
-            match n.parse::<usize>() {
-                Ok(len) if len >= 1 => ScalarType::Text(len),
-                _ => return Err(TypeError::BadStringLength(n.to_owned())),
-            }
+impl From<ScalarTypeError> for TypeError {
+    fn from(e: ScalarTypeError) -> Self {
+        match e {
+            ScalarTypeError::Unknown(t) => Self::Unknown(t),
+            ScalarTypeError::BadStringLength(n) => Self::BadStringLength(n),
         }
-    })
+    }
 }
 
 impl DataType {
@@ -95,7 +66,7 @@ impl DataType {
             if !(1..=MAX_ARRAY_LEN).contains(&len) {
                 return Err(TypeError::BadArrayLength(inner.to_owned()));
             }
-            let scalar = parse_scalar(&text[..open])?;
+            let scalar = ScalarType::parse(&text[..open])?;
             if matches!(scalar, ScalarType::Text(_)) {
                 return Err(TypeError::StringArray);
             }
@@ -106,7 +77,7 @@ impl DataType {
             });
         }
         Ok(Self {
-            scalar: parse_scalar(text)?,
+            scalar: ScalarType::parse(text)?,
             len: 1,
             array: false,
         })
@@ -122,7 +93,7 @@ impl DataType {
             ScalarType::Bool | ScalarType::Int16 | ScalarType::Uint16 => 1,
             ScalarType::Int32 | ScalarType::Uint32 | ScalarType::Float32 => 2,
             ScalarType::Int64 | ScalarType::Uint64 | ScalarType::Float64 => 4,
-            ScalarType::Text(n) => n.div_ceil(2),
+            ScalarType::Text(n) => usize::from(n).div_ceil(2),
         };
         per * self.len
     }
@@ -205,11 +176,21 @@ mod tests {
     }
 
     #[test]
+    fn string_length_is_capped_at_256() {
+        assert!(DataType::parse("string:256").is_ok());
+        assert!(matches!(
+            DataType::parse("string:257"),
+            Err(TypeError::BadStringLength(_))
+        ));
+    }
+
+    #[test]
     fn word_widths() {
         assert_eq!(DataType::parse("bool").unwrap().words(), 1);
         assert_eq!(DataType::parse("int32").unwrap().words(), 2);
         assert_eq!(DataType::parse("float64").unwrap().words(), 4);
         assert_eq!(DataType::parse("string:5").unwrap().words(), 3);
+        assert_eq!(DataType::parse("string:256").unwrap().words(), 128);
         assert_eq!(DataType::parse("float32[3]").unwrap().words(), 6);
     }
 

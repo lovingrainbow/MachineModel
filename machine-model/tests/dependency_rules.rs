@@ -11,6 +11,9 @@ const BANNED_BASE: &[&str] = &[
     "clap",
     "clap_builder",
     "clap_derive",
+    "tokio-serial",
+    "serialport",
+    "mio-serial",
 ];
 
 fn tree_names(extra_args: &[&str]) -> String {
