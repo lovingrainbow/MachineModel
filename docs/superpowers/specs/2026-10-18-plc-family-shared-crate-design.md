@@ -38,7 +38,7 @@
 
 ## 5. 限制（Constraints）
 
-- 各 repo 都**沒有 git remote**（PLCDriver 甚至不是 git repo，改動前已備份為 `projects/PLCDriver_backup_20261018.tar.gz`，不得刪除），只能用本機路徑依賴（使用者已選定）。MachineModel、DataService、PLCDriver 與 `plc-common` 必須並排放在 `orca/projects/` 下。
+- 【2026-10-18 更新】實作當時各 repo 沒有 git remote，採本機路徑依賴；現在 MachineModel、DataService、PLCDriver、`plc-common` 都有 GitHub remote（`lovingrainbow/*`），MachineModel 已改為依賴 `plc-common` 的 git tag `v0.1.0`，**專案間依賴以 git 為主**（使用者決定）。PLCDriver 備份 `projects/PLCDriver_backup_20261018.tar.gz` 仍不得刪除。DataService、PLCDriver 目前仍是路徑依賴，將依融合計畫改成 git。
 - 依賴方向（只往下）：
 
       plc-common            （serde）
@@ -111,11 +111,11 @@
 
 ## 8. 風險
 
-- 若任一 repo 或 `plc-common` 移動位置，路徑依賴會失效；MachineModel 單獨 clone 後無法編譯，必須有 `plc-common` 並排。
+- DataService、PLCDriver 目前仍是路徑依賴，這兩者移動位置會失效；MachineModel 已改 git 依賴，單獨 clone 即可編譯（需能連到 GitHub）。
 - `ScalarType` 統一會讓 MachineModel 的字串型別多出 256 上限，並改字串成員為 `u16`。
 - DataService 的 `crates/mm-drivers` 與 PLCDriver 合併時，DataService 未提交的修改必須完整保留（以 DataService 現有那份為準）。
 - 19200-8-E-1 與 RS-485 方向控制尚未用實機驗證。
-- PLCDriver 與 plc-common 目前不是 git repo（沒有版本控制）；DataService 原有的 mm-drivers 修改現在只存在於 PLCDriver 的檔案中，提交前應先將這兩個目錄納入版本控制或備份。
+- 【已解決】PLCDriver 與 plc-common 已納入 git 並有 remote；DataService 原有的 mm-drivers 修改現在隨 PLCDriver 版本控制。
 - DataService 單獨無法編譯，必須有並排的 PLCDriver 與 plc-common；DataService 還會讀取 PLCDriver 的 workspace 設定（version.workspace、serde.workspace 以 PLCDriver/Cargo.toml 為準），PLCDriver 的 manifest 損壞會連帶破壞 DataService。
 - 已知且本次不處理：寫入幀問題、Inovance 位址映射、`datasvc-demo` 互動模式改設定時舊服務仍佔用序列埠、兩套 `machine-model` 的分歧。
 

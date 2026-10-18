@@ -95,6 +95,7 @@ plc-common                      家族表、ScalarType、ScalarValue（已完成
 ## Global Constraints
 
 - **終點（使用者目標）**：DataService 的 `plc-data-service`、`datasvc-demo`、`src-tauri` 直接依賴 `../MachineModel/machine-model`，`DataService/crates/machine-model` 刪除，整個 `projects/` 之下只剩一份 machine-model；依賴方向維持 plc-common ← MachineModel ← DataService，不得反向。
+- **依賴方式（使用者決定：git 為主）**：專案之間的依賴一律用 GitHub 的 git tag（`lovingrainbow/*`），不再要求並排目錄；階段 5 起 DataService 對 MachineModel 的依賴用 `git + tag`，需先在 MachineModel 打 tag。開發期若需要本機聯調，用 Cargo 的 `[patch]` 暫時指向本機路徑，不 commit。
 - **凍結規則（防止進度再分岔）**：從本計畫開始，`DataService/crates/machine-model` 不再新增規則或功能；任何模型相關的新增與修正只進 `MachineModel/machine-model`。階段 5 完成前若 DataService 需要新規則，先做在 MachineModel，再由 DataService 取用。
 - **融合不得增加使用者設定的複雜度**（使用者要求）：`machine.yaml` 與 Unit 類型檔的欄位集合以 MachineModel 現行為準，**零新增欄位、零新增 feature flag、零新增模式或旗標**；DataService 獨有的欄位（例如 variables 的 `label`）移除而不是搬過來。新增的只能是程式內部的 API、推導結果與診斷輸出，不能要求使用者在 YAML 或 CLI 多做任何選擇。由 `tests/schema_pins.rs` 與 `tools/model-diff` 把關：融合前後 `machine.yaml` 與類型檔的 JSON Schema 必須逐字相同。
 - 本體只依賴 `serde`、`serde_yaml_ng`、`plc-common`；不得依賴 `tokio`、`axum`、`reqwest`、`hyper`、`clap`、`toml`；`jsonschema` 只在 `schema` feature 之後（`tests/dependency_rules.rs` 把關）。
