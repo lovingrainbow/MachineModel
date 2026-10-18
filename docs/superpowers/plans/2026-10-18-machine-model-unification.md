@@ -222,7 +222,7 @@ plc-common                      家族表、ScalarType、ScalarValue（已完成
 - 全域搜尋 `DataService/crates/machine-model` 無殘留；三個專案 `cargo test --workspace`、clippy、fmt 通過。
 - [x] 保留 `tools/model-diff` 與否：融合後 DataService 版已不存在，工具失去用途，**刪除**。
 
-**階段 6 狀態（2026-10-18）：已完成（`tools/model-diff` 已刪；差距報告保留作紀錄）。仍待：把 DataService 對 MachineModel 的路徑依賴改成 git tag（需 MachineModel 打 tag 並推送）；`dataservice*.md`、`Upgrade.md` 是歷史對話紀錄，未更新。**
+**階段 6 狀態（2026-10-18）：已完成（`tools/model-diff` 已刪；差距報告保留作紀錄）。DataService 對 MachineModel 的依賴已改為 git tag v0.2.0（已推送）；`dataservice*.md`、`Upgrade.md` 是歷史對話紀錄，未更新。**
 
 ## 風險
 
