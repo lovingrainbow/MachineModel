@@ -13,23 +13,24 @@ pub const MACHINE_UNIT: &str = "machine";
 /// 保留的單元 id：不得宣告。
 pub const UNASSIGNED_UNIT: &str = "unassigned";
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct MachineModel {
     pub schema_version: u32,
     pub machine: Machine,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub units: Vec<UnitInstance>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<Tag>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub variables: Vec<Variable>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Machine {
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(default)]
     pub plcs: Vec<Plc>,
@@ -39,43 +40,49 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Plc {
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     pub family: Family,
     #[serde(default = "default_true")]
     pub online: bool,
     /// 位址類別或區間；語法由漂移比對解析，這裡只保存。
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub diff_scope: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sources: Option<Sources>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Sources {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub io_table: Option<IoSource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub plc_export: Option<ExportSource>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct IoSource {
     pub file: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sheet: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExportSource {
     pub file: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reader: Option<String>,
 }
 
 /// 單元實例：由 `type`（Unit 類型檔 id）、`type_version` 與 `bind` 組成（規格 §3.1）。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct UnitInstance {
     pub id: String,
@@ -84,7 +91,7 @@ pub struct UnitInstance {
     /// 必填，必須等於類型目錄中該類型的 `version`（U2，Plan 2）；`0` 是 `R28`。
     pub type_version: u32,
     /// 接腳名或 part 名 → 值。值是 Tag id、Unit id，或 `null`（刻意不接）。
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "StrictMap::is_empty")]
     pub bind: StrictMap<Option<String>>,
 }
 
@@ -128,33 +135,50 @@ pub enum Scalar {
 }
 
 /// 一個 PLC 位址上的點（規格 §3.2）。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Tag {
     pub id: String,
     pub address: String,
     #[serde(rename = "type")]
     pub ty: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scan: Option<Scan>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scale: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub deadband: Option<f64>,
     /// 工程單位（如 `degC`）。
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub readback: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Scalar>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retain: Option<bool>,
     /// 明確覆寫用，通常省略（規格 §6.1）。
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<Role>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub polarity: Option<Polarity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub safety_monitor: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub spare: Option<bool>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "StrictMap::is_empty")]
     pub ext: Ext,
 }
 
@@ -177,14 +201,19 @@ impl Tag {
 #[serde(deny_unknown_fields)]
 pub struct Variable {
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub symbol: Option<String>,
     #[serde(rename = "type")]
     pub ty: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retain: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Scalar>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "StrictMap::is_empty")]
     pub ext: Ext,
 }
 
