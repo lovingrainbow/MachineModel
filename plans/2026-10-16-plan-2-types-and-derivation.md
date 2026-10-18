@@ -12,7 +12,7 @@
 
 **Prerequisite:** Plan 1（`plans/2026-10-16-plan-1-foundation.md`）全部完成並通過驗證。本計畫假設其產物原樣存在（`schema.rs`、`rules/`、`tests/common/mod.rs` 的 `HEAD`／`doc`／`tags`／`codes`／`tag_codes`）。
 
-> **勾選說明**：已完成的步驟已勾選，依據為程式與測試（`cargo test -p machine-model` 全綠）。8 個「確認測試失敗」（紅燈）步驟未勾選：紅燈的執行結果沒有留在 git 歷史中，無法回溯驗證。
+> **勾選說明**：已完成的步驟已勾選，依據為程式與測試（`cargo test -p machine-model` 全綠）。8 個「確認測試失敗」（紅燈）步驟原先未勾選：紅燈的執行結果沒有留在 git 歷史中，無法回溯驗證。**2026-10-18 補跑**：在暫存副本中把各模組還原到實作前的狀態（刪除模組，或移除函式實作），執行本步驟的指令。8 項全部如預期失敗（編譯錯誤或測試失敗），未變異的基準全部通過。這是重建的紅燈，不是當時的原始執行順序。
 
 > **規格變更註記（2026-10-16）**：接腳層級的 `role`（以及 `kind`、`level`、`reset`）已在規格 v0.3 移除（§4.1，見提交 `9d92594`）。本計畫中以下描述已過時，**以規格 v0.3 與目前程式碼為準**：`CtrlPin.role` 介面（約第 403 行）、推導的三層優先序（約第 2613、3152–3156 行）、U14 對接腳 role 的比較（約第 2093、2503 行）。現行 role 優先序為：Tag 上明確寫的 `role` ＞ 前綴推測 ＞ 無（規格 §6.1）。測試程式碼只測 Tag 明確值與前綴推測，不受此變更影響。
 
@@ -226,10 +226,11 @@ mod tests {
 }
 ```
 
-- [ ] **Step 3: 確認測試失敗**
+- [x] **Step 3: 確認測試失敗**
 
 Run: `cargo test -p machine-model naming`
 Expected: FAIL（編譯錯誤：`Prefix` 等未定義）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`cannot find type Prefix`（`error[E0433]`）×24、`cannot find function split`（`error[E0425]`）×10、`cannot find type BindPolicy` ×4。
 
 - [x] **Step 4: 寫實作（放在 `naming.rs` 的 `#[cfg(test)]` 之前）**
 
@@ -575,10 +576,11 @@ parts: {}
 }
 ```
 
-- [ ] **Step 2: 確認測試失敗**
+- [x] **Step 2: 確認測試失敗**
 
 Run: `cargo test -p machine-model unit_type`
 Expected: FAIL（編譯錯誤：`parse_unit_type` 等未定義）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`cannot find function parse_unit_type` ×8、`cannot find type PinRef` ×5、`unresolved import crate::unit_type::PinRef` ×2。
 
 - [x] **Step 3: 寫實作（放在 `unit_type.rs` 的 `#[cfg(test)]` 之前）**
 
@@ -1031,10 +1033,11 @@ fn local_types_are_checked_against_the_combined_catalog() {
 }
 ```
 
-- [ ] **Step 2: 確認測試失敗**
+- [x] **Step 2: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test catalog`
 Expected: FAIL（編譯錯誤：`machine_model::catalog` 不存在）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`unresolved import crate::catalog` ×5、`cannot find module catalog` ×1、`mismatched types` ×1（lib 共 7 個錯誤）。
 
 - [x] **Step 3: 寫 `catalog.rs`**
 
@@ -1553,10 +1556,11 @@ fn spec_example_types_are_present() {
 }
 ```
 
-- [ ] **Step 3: 確認測試失敗**
+- [x] **Step 3: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test standard_pins`
 Expected: FAIL（編譯錯誤：`machine_model::hash` 不存在）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`unresolved import crate::hash` ×1（lib 共 1 個錯誤）。
 
 - [x] **Step 4: 寫實作**
 
@@ -1817,10 +1821,11 @@ fn diagnostics_are_traditional_chinese_with_location() {
 
 注意 `u2_...` 測試第一個案例的 `replace` 字串很容易抄錯：它的目的只是把 `leaf1` 的 `type` 換成 `ghost`；實作者可改寫成更直接的字串（例如整行替換 `  - {id: leaf1, type: leaf, type_version: 1}\n`），只要效果相同、並且預期仍是單一 `U2`。
 
-- [ ] **Step 2: 確認測試失敗**
+- [x] **Step 2: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test analyze_graph`
 Expected: FAIL（編譯錯誤：`machine_model::analyze` 不存在）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`cannot find module or crate analyze` ×1（lib 共 1 個錯誤）。
 
 - [x] **Step 3: 寫實作**
 
@@ -2335,10 +2340,11 @@ fn u14_is_a_warning_not_an_error() {
 }
 ```
 
-- [ ] **Step 2: 確認測試失敗**
+- [x] **Step 2: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test analyze_pins`
 Expected: FAIL（`check_pins` 目前是空殼，多數測試拿到空診斷）。
+紅燈實測（2026-10-18 補跑）：exit 101，測試失敗。`test result: FAILED. 3 passed; 7 failed`，失敗者為 u4、u6、u10、u11、u13、u14（兩個）。
 
 - [x] **Step 3: 寫實作（取代 `analyze/pins.rs`）**
 
@@ -2857,10 +2863,11 @@ units:\n  - {id: machine, type: ghost, type_version: 9, bind: {x: plc1.NOPE, y: 
 }
 ```
 
-- [ ] **Step 3: 確認測試失敗**
+- [x] **Step 3: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test resolve`
 Expected: FAIL（編譯錯誤：`machine_model::resolve` 不存在）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`cannot find module or crate resolve` ×2（lib 共 2 個錯誤）。
 
 - [x] **Step 4: 寫實作 `resolve.rs`**
 
@@ -3388,10 +3395,11 @@ fn unreferenced_tags_are_never_write_candidates() {
 }
 ```
 
-- [ ] **Step 2: 確認測試失敗**
+- [x] **Step 2: 確認測試失敗**
 
 Run: `cargo test -p machine-model --test e2e`
 Expected: FAIL（編譯錯誤：`load_checked` 未定義）。
+紅燈實測（2026-10-18 補跑）：exit 101，編譯失敗。`unresolved import machine_model::load_checked` ×1（test "e2e" 共 1 個錯誤）。
 
 - [x] **Step 3: 寫實作（加在 `lib.rs` 檔尾）**
 
