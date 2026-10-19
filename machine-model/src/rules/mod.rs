@@ -8,6 +8,7 @@ mod structure;
 mod units;
 mod values;
 
+pub(crate) use addresses::{Occupancy, collisions, occupancy, type_fits};
 pub(crate) use structure::version_error;
 
 use crate::SCHEMA_VERSION;

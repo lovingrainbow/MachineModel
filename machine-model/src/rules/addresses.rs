@@ -1,6 +1,8 @@
 //! 位址規則：R8、R18、R19、R24。
 //!
 //! v2 沒有 R20：Tag 沒有 `write_permission`。「操作腳不得綁唯讀位址類別」是 U13（Plan 2）。
+//!
+//! 佔用範圍（[`occupancy`]）與重疊判定（[`collisions`]）同時供服務點位使用（`writable` 模組，DS9）。
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -10,12 +12,13 @@ use crate::family::{ClassProfile, Width};
 use crate::schema::{MachineModel, Plc, Tag, split_id};
 use crate::types::DataType;
 
-/// 一個已通過 R18、R19 的 tag 在某個位址類別上佔用的空間。
-enum Slot<'a> {
+/// 一個點位在某個位址類別上佔用的空間（R8 與服務點位共用）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Occupancy {
     /// 半開區間 `[start, end)`，單位是該類別的位址（位元類為位元，字組類為字組）。
-    Span { start: u32, end: u32, tag: &'a Tag },
+    Span { start: u32, end: u32 },
     /// 字組類別中的單一位元（`R10.3`）。
-    Bit { word: u32, bit: u8, tag: &'a Tag },
+    Bit { word: u32, bit: u8 },
 }
 
 pub(super) fn check(m: &MachineModel, out: &mut Vec<Diagnostic>) {
@@ -25,7 +28,7 @@ pub(super) fn check(m: &MachineModel, out: &mut Vec<Diagnostic>) {
 fn check_tags(plcs: &[Plc], tags: &[Tag], out: &mut Vec<Diagnostic>) {
     let plcs: BTreeMap<&str, &Plc> = plcs.iter().map(|p| (p.id.as_str(), p)).collect();
     // (plc id, 類別名稱) → 佔用
-    let mut placed: BTreeMap<(&str, &'static str), Vec<Slot<'_>>> = BTreeMap::new();
+    let mut placed: BTreeMap<(&str, &'static str), Vec<(Occupancy, &Tag)>> = BTreeMap::new();
 
     for t in tags {
         let Some((plc_id, _)) = split_id(&t.id) else {
@@ -63,17 +66,30 @@ fn check_tags(plcs: &[Plc], tags: &[Tag], out: &mut Vec<Diagnostic>) {
             out.push(Diagnostic::error("R19", &loc, msg));
             continue;
         }
-        let Some(slot) = make_slot(t, class, &addr, &ty, &loc, out) else {
-            continue;
+        let occ = match occupancy(class, &addr, &ty) {
+            Ok(o) => o,
+            Err(msg) => {
+                out.push(Diagnostic::error("R18", &loc, msg));
+                continue;
+            }
         };
         placed
-            .entry((plc_id, addr.class.name))
+            .entry((plc_id, class.name))
             .or_default()
-            .push(slot);
+            .push((occ, t));
     }
 
     for ((plc_id, class_name), slots) in &placed {
-        check_overlap(plc_id, class_name, slots, out);
+        let items: Vec<(&str, Occupancy)> =
+            slots.iter().map(|(o, t)| (t.id.as_str(), *o)).collect();
+        for (later, earlier) in collisions(&items) {
+            out.push(overlap(
+                plc_id,
+                class_name,
+                slots[later].1,
+                slots[earlier].1,
+            ));
+        }
     }
 }
 
@@ -93,7 +109,8 @@ fn check_polarity(
     }
 }
 
-fn type_fits(class: &ClassProfile, addr: &Address, ty: &DataType) -> Result<(), String> {
+/// 位址的型別是否與類別相容（R19）。
+pub(crate) fn type_fits(class: &ClassProfile, addr: &Address, ty: &DataType) -> Result<(), String> {
     match class.width {
         Width::Bit => {
             if ty.is_bool() {
@@ -114,19 +131,16 @@ fn type_fits(class: &ClassProfile, addr: &Address, ty: &DataType) -> Result<(), 
     }
 }
 
-fn make_slot<'a>(
-    t: &'a Tag,
+/// 依位址與型別算出佔用空間；超過類別上限時回傳錯誤訊息（R18）。
+pub(crate) fn occupancy(
     class: &ClassProfile,
     addr: &Address,
     ty: &DataType,
-    loc: &str,
-    out: &mut Vec<Diagnostic>,
-) -> Option<Slot<'a>> {
+) -> Result<Occupancy, String> {
     if let Some(bit) = addr.bit {
-        return Some(Slot::Bit {
+        return Ok(Occupancy::Bit {
             word: addr.number,
             bit,
-            tag: t,
         });
     }
     let span = match class.width {
@@ -136,67 +150,70 @@ fn make_slot<'a>(
     let span = u32::try_from(span).unwrap_or(u32::MAX);
     let end = addr.number.saturating_add(span);
     if end > class.max.saturating_add(1) {
-        out.push(Diagnostic::error(
-            "R18",
-            loc,
-            format!(
-                "{} 類別從 {} 起佔用 {span} 個位址，超過上限 {}",
-                class.name, addr.number, class.max
-            ),
+        return Err(format!(
+            "{} 類別從 {} 起佔用 {span} 個位址，超過上限 {}",
+            class.name, addr.number, class.max
         ));
-        return None;
     }
-    Some(Slot::Span {
+    Ok(Occupancy::Span {
         start: addr.number,
         end,
-        tag: t,
     })
 }
 
-fn check_overlap(plc_id: &str, class_name: &str, slots: &[Slot<'_>], out: &mut Vec<Diagnostic>) {
-    let mut spans: Vec<(u32, u32, &Tag)> = slots
+/// 同一位址類別內的佔用重疊配對（R8 與服務點位共用）。
+///
+/// `items` 為 `(點位 id, 佔用)`。回傳 `(後者的索引, 先者的索引)`，順序與 R8 的診斷順序一致。
+pub(crate) fn collisions(items: &[(&str, Occupancy)]) -> Vec<(usize, usize)> {
+    let mut pairs = Vec::new();
+
+    let mut spans: Vec<(u32, u32, usize)> = items
         .iter()
-        .filter_map(|s| match s {
-            Slot::Span { start, end, tag } => Some((*start, *end, *tag)),
-            Slot::Bit { .. } => None,
+        .enumerate()
+        .filter_map(|(i, (_, occ))| match *occ {
+            Occupancy::Span { start, end } => Some((start, end, i)),
+            Occupancy::Bit { .. } => None,
         })
         .collect();
-    spans.sort_by_key(|(start, _, tag)| (*start, tag.id.as_str()));
+    spans.sort_by_key(|(start, _, i)| (*start, items[*i].0));
 
-    let mut holder: Option<(u32, &Tag)> = None; // (目前最遠的 end, 持有者)
-    for (start, end, tag) in &spans {
+    let mut holder: Option<(u32, usize)> = None; // (目前最遠的 end, 持有者)
+    for &(start, end, i) in &spans {
         if let Some((max_end, owner)) = holder {
-            if *start < max_end {
-                out.push(overlap(plc_id, class_name, tag, owner));
+            if start < max_end {
+                pairs.push((i, owner));
             }
         }
-        if holder.is_none_or(|(max_end, _)| *end > max_end) {
-            holder = Some((*end, tag));
+        if holder.is_none_or(|(max_end, _)| end > max_end) {
+            holder = Some((end, i));
         }
     }
 
-    let mut seen_bits: BTreeMap<(u32, u8), &Tag> = BTreeMap::new();
-    let mut bit_slots: Vec<(u32, u8, &Tag)> = slots
+    let mut bit_slots: Vec<(u32, u8, usize)> = items
         .iter()
-        .filter_map(|s| match s {
-            Slot::Bit { word, bit, tag } => Some((*word, *bit, *tag)),
-            Slot::Span { .. } => None,
+        .enumerate()
+        .filter_map(|(i, (_, occ))| match *occ {
+            Occupancy::Bit { word, bit } => Some((word, bit, i)),
+            Occupancy::Span { .. } => None,
         })
         .collect();
-    bit_slots.sort_by_key(|(w, b, tag)| (*w, *b, tag.id.as_str()));
-    let mut reported: BTreeSet<&str> = BTreeSet::new();
-    for (word, bit, tag) in bit_slots {
-        if let Some(other) = seen_bits.get(&(word, bit)) {
-            out.push(overlap(plc_id, class_name, tag, other));
+    bit_slots.sort_by_key(|(w, b, i)| (*w, *b, items[*i].0));
+
+    let mut seen_bits: BTreeMap<(u32, u8), usize> = BTreeMap::new();
+    let mut reported: BTreeSet<usize> = BTreeSet::new();
+    for (word, bit, i) in bit_slots {
+        if let Some(&other) = seen_bits.get(&(word, bit)) {
+            pairs.push((i, other));
             continue;
         }
-        seen_bits.insert((word, bit), tag);
-        if let Some((_, _, owner)) = spans.iter().find(|(s, e, _)| (*s..*e).contains(&word)) {
-            if reported.insert(tag.id.as_str()) {
-                out.push(overlap(plc_id, class_name, tag, owner));
+        seen_bits.insert((word, bit), i);
+        if let Some(&(_, _, owner)) = spans.iter().find(|(s, e, _)| (*s..*e).contains(&word)) {
+            if reported.insert(i) {
+                pairs.push((i, owner));
             }
         }
     }
+    pairs
 }
 
 fn overlap(plc_id: &str, class_name: &str, tag: &Tag, other: &Tag) -> Diagnostic {

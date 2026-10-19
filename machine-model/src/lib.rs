@@ -21,6 +21,7 @@ pub mod strict;
 mod type_rules;
 pub mod types;
 pub mod unit_type;
+pub mod writable;
 
 use diag::Diagnostic;
 use schema::MachineModel;

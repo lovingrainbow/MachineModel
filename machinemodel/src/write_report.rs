@@ -1,11 +1,12 @@
 //! `write-report` 子命令：最終可寫清單、覆寫差異與 §9.3 安全護欄。
 //!
-//! 服務設定只讀 `[[tag_override]]` 子集（`id`、`writable`），其餘通訊設定（IP、Port…）忽略。
+//! 判定規則在 `machine_model::writable`（與 `PlcDataService` 共用）；這裡只解析服務設定並輸出報表。
+//! 服務設定讀 `[[tag_override]]` 與 `[[point]]`；其餘通訊設定（IP、Port…）忽略。
 
-use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use machine_model::resolve::ResolvedModel;
+use machine_model::writable::{Override, ServicePoint, WritableSource, evaluate};
 use serde::Deserialize;
 
 use crate::check;
@@ -20,11 +21,13 @@ pub struct Args {
     pub service: std::path::PathBuf,
 }
 
-/// 服務設定的子集；未知欄位一律忽略（不得加 `deny_unknown_fields`）。
+/// 服務設定的子集；未知的通訊欄位一律忽略（不得加 `deny_unknown_fields`）。
 #[derive(Debug, Deserialize)]
 struct ServiceFile {
     #[serde(default)]
     tag_override: Vec<TagOverride>,
+    #[serde(default)]
+    point: Vec<ServicePoint>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -72,7 +75,7 @@ pub fn run(args: &Args) -> i32 {
     for d in &checked.warnings {
         eprintln!("{d}");
     }
-    match evaluate(&checked.resolved, &service.tag_override) {
+    match report(&checked.resolved, &service.tag_override, &service.point) {
         Err(violations) => {
             for v in &violations {
                 eprintln!("{v}");
@@ -86,50 +89,50 @@ pub fn run(args: &Args) -> i32 {
     }
 }
 
-/// 檢查 §9.3 的四項護欄；有違規回全部違規訊息，否則回報表文字。
-fn evaluate(model: &ResolvedModel, overrides: &[TagOverride]) -> Result<String, Vec<String>> {
-    let mut violations = Vec::new();
-    let mut seen = BTreeSet::new();
-    for o in overrides {
-        if !seen.insert(o.id.as_str()) {
-            violations.push(format!("護欄：覆寫重複指定同一個 Tag `{}`", o.id));
-        }
-    }
-
-    // tag id → (模型推導的可寫性, 覆寫後的可寫性)
-    let mut applied: BTreeMap<&str, (bool, bool)> = BTreeMap::new();
-    for o in overrides {
-        let Some(tag) = model.tag(&o.id) else {
-            violations.push(format!("護欄 3：覆寫指向不存在的 Tag `{}`", o.id));
-            continue;
-        };
-        if o.writable && tag.class_read_only {
-            violations.push(format!("護欄 1：唯讀類別的 Tag `{}` 不可覆寫為可寫", o.id));
-        }
-        if o.writable && tag.safety_monitor {
-            violations.push(format!("護欄 2：安全監控點 `{}` 不可覆寫為可寫", o.id));
-        }
-        applied.insert(tag.id.as_str(), (tag.write_candidate, o.writable));
-    }
-    if !violations.is_empty() {
-        return Err(violations);
+/// 套用 §9.3 護欄後輸出報表；有違規回全部違規訊息，否則回報表文字。
+fn report(
+    model: &ResolvedModel,
+    overrides: &[TagOverride],
+    points: &[ServicePoint],
+) -> Result<String, Vec<String>> {
+    let requests: Vec<Override<'_>> = overrides
+        .iter()
+        .map(|o| Override {
+            tag_id: &o.id,
+            writable: o.writable,
+        })
+        .collect();
+    let result = evaluate(model, &requests, points);
+    if !result.guardrail_errors.is_empty() {
+        return Err(result
+            .guardrail_errors
+            .iter()
+            .map(ToString::to_string)
+            .collect());
     }
 
     let mut out = String::new();
     let mut table = Vec::new();
-    for tag in &model.tags {
-        if let Some(&(model_writable, final_writable)) = applied.get(tag.id.as_str()) {
-            table.push((tag.id.as_str(), final_writable, "override"));
-            if model_writable != final_writable {
-                writeln!(
-                    out,
-                    "{}：模型 {} → 覆寫 {}",
-                    tag.id, model_writable, final_writable
-                )
-                .expect("寫入字串不會失敗");
+    for item in &result.items {
+        match item.source {
+            WritableSource::Override => {
+                table.push((item.tag_id.as_str(), item.final_writable, item.source));
+                if item.write_candidate != item.final_writable {
+                    writeln!(
+                        out,
+                        "{}：模型 {} → 覆寫 {}",
+                        item.tag_id, item.write_candidate, item.final_writable
+                    )
+                    .expect("寫入字串不會失敗");
+                }
             }
-        } else if tag.write_candidate {
-            table.push((tag.id.as_str(), true, "model"));
+            WritableSource::Model if item.write_candidate => {
+                table.push((item.tag_id.as_str(), true, item.source));
+            }
+            WritableSource::Model => {}
+            WritableSource::Service => {
+                table.push((item.tag_id.as_str(), item.final_writable, item.source));
+            }
         }
     }
 

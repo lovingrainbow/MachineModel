@@ -380,7 +380,33 @@ IR 保留樹狀；匯出器預設輸出降階形式：
   1. 覆寫**不能**讓唯讀位址類別（`X` 等，由家族表判定）的 Tag 變可寫；
   2. `safety_monitor: true` 的 Tag 不能被覆寫為可寫；
   3. 覆寫引用不存在的 Tag → 啟動錯誤；
-  4. 啟動時輸出最終可寫清單，並標明來源（`model` 或 `override`）；API 在 Tag 資訊中帶 `writable` 與來源。
+  4. 啟動時輸出最終可寫清單，並標明來源（`model`、`override` 或 `service`）；API 在 Tag 資訊中帶 `writable` 與來源。
+  5. 覆寫**不能**指向服務點位（DS11）；服務點位的可寫性只由它自己的 `writable` 欄位決定。
+
+- **服務點位**（不在機台模型中的點位）：允許在 `service.toml` 以 `[[point]]` 新增。它不屬於機台模型，不影響 `machine.yaml`、Unit 或類型檔；欄位集合如下：
+
+  ```toml
+  [[point]]
+  id = "plc1.Extra_Speed"   # 同 machine.yaml 格式 <plc>.<名稱>
+  address = "D200"          # 必須符合該 PLC 家族的位址語法
+  type = "int16"            # 必須是模型支援的 Tag 型別
+  writable = false          # 選填，預設 false（fail-closed）
+  scan = "normal"           # 選填：fast | normal | slow，預設 normal
+  min = 0                   # 選填；writable = true 時必填
+  max = 100                 # 選填；writable = true 時必填
+  ```
+
+  未知欄位一律拒絕（與 `machine.yaml` 相同）。違反即啟動失敗，規則編號如下：
+  - DS5：點位 id 與機台模型或其他服務點位重複；
+  - DS6：`<plc>` 不是模型中的 PLC；
+  - DS7：位址語法錯誤、超出家族範圍，或型別與位址類別不相容（與 R18、R19 相同）；
+  - DS8：型別不存在；
+  - DS9：位址與模型點位或其他服務點位**重疊**（同 PLC、同位址類別，含多字元與位元；與 R8 的判定相同）。與模型點位重疊時一律拒絕服務點位；服務點位之間重疊時依 `service.toml` 的宣告順序，先宣告者保留、後宣告者被拒。被拒的點位不佔位址，不影響其後的點位；
+  - DS1：唯讀位址類別（如 `X`）的服務點位不可設 `writable = true`；
+  - DS10：`writable = true` 卻沒有 `min` 與 `max`；
+  - 服務點位沒有 `safety_monitor` 欄位：安全監控點只能在機台模型中宣告。
+  
+  最終可寫清單中，服務點位的來源標為 `service`；可寫的服務點位不是模型候選，因此列入人工審查。
 - 設計期檢查（命令列工具）列出「最終可寫但不是模型候選」的 Tag，供人審查；取代原本的 `review.md` 簽核。
 - 沒被任何 Unit 綁定的 Tag 預設不可寫（fail-closed）；需要寫入就綁到某個 `man_` 接腳，或使用覆寫。
 
